@@ -59,7 +59,7 @@ export async function handleRequest(
     // GET /api/tasks
     if (method === "GET" && pathname === "/api/tasks") {
       const content = fs.readFileSync(todoPath(root), "utf-8");
-      const tasks = parseTodo(content);
+      const tasks = parseTodo(content).filter((t) => t.status !== "deleted");
       json(res, tasks);
       return true;
     }

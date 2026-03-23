@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { execa } from "execa";
 import { todoPath, ensureRwDir, readMemory, readRules } from "../core/config.js";
 import { parseTodo } from "../core/todo-parser.js";
+import MERGE_CONFLICT_PROMPT from "../prompts/merge-conflict.md";
 import {
   gitRootDir,
   gitMerge,
@@ -25,8 +26,7 @@ async function resolveConflictsWithAgent(
   const memory = readMemory(root);
   const rules = readRules(root);
 
-  let prompt = `你正在解决 git merge 冲突。\n\n`;
-  prompt += `分支 \`${branch}\` 正在合并到 \`${into}\`。\n\n`;
+  let prompt = `分支 \`${branch}\` 正在合并到 \`${into}\`。\n\n`;
   prompt += `冲突文件：\n${conflictFiles.map((f) => `- ${f}`).join("\n")}\n\n`;
 
   if (memory) {
@@ -36,13 +36,7 @@ async function resolveConflictsWithAgent(
     prompt += `## 规则\n${rules}\n\n`;
   }
 
-  prompt += `## 要求
-1. 读取每个冲突文件，理解双方的改动意图
-2. 根据 memory 中的上下文信息，合理解决所有冲突标记（<<<<<<<、=======、>>>>>>>）
-3. 保留双方有意义的改动，确保代码逻辑正确
-4. 解决完所有冲突后，确保代码能正常工作
-5. 不要删除任何一方的有效代码，除非它确实被另一方的改动替代
-`;
+  prompt += MERGE_CONFLICT_PROMPT;
 
   try {
     await execa("claude", ["--print", prompt, "--output-format", "text", "--max-turns", "25"], {

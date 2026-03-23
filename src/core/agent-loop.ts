@@ -76,7 +76,8 @@ async function callClaude(opts: AgentLoopOptions): Promise<string> {
     "--print",
     opts.prompt,
     "--output-format",
-    "text",
+    "stream-json",
+    "--verbose",
     "--max-turns",
     "25",
   ];
@@ -87,14 +88,50 @@ async function callClaude(opts: AgentLoopOptions): Promise<string> {
     }
   }
 
-  const result = await execa("claude", args, {
+  const proc = execa("claude", args, {
     cwd: opts.cwd,
     timeout: opts.timeoutMs,
+    stdin: "ignore",
     env: {
       ...process.env,
       CLAUDE_CODE_ENTRYPOINT: "ralph-worktree",
     },
   });
 
-  return result.stdout;
+  let fullText = "";
+
+  // Parse stream-json for real-time progress
+  if (proc.stdout) {
+    proc.stdout.on("data", (chunk: Buffer) => {
+      const lines = chunk.toString().split("\n").filter(Boolean);
+      for (const line of lines) {
+        try {
+          const event = JSON.parse(line);
+          if (event.type === "assistant" && event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === "text") {
+                fullText += block.text;
+              }
+            }
+          } else if (event.type === "result" && event.result) {
+            // Final result text
+            fullText = event.result;
+          }
+          // Log tool usage for visibility
+          if (event.type === "assistant" && event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === "tool_use") {
+                logger.task(opts.taskName, `  → ${block.name}`);
+              }
+            }
+          }
+        } catch {
+          // non-JSON line, ignore
+        }
+      }
+    });
+  }
+
+  await proc;
+  return fullText;
 }

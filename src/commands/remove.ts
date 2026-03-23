@@ -1,6 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-import { todoPath, memoryDir, ensureRwDir } from "../core/config.js";
+import { todoPath, ensureRwDir } from "../core/config.js";
 import { removeTask } from "../core/todo-parser.js";
 import { cleanup } from "../core/worktree.js";
 import { gitRootDir } from "../utils/git.js";
@@ -16,19 +14,15 @@ export async function removeCommand(name: string) {
 
   removeTask(todoPath(root), name);
 
-  // Clean up worktree and branch
-  try {
-    await cleanup(root, name);
-    logger.success(`已清理 worktree: ${name}`);
-  } catch {
-    // worktree may not exist
-  }
+  const result = await cleanup(root, name);
 
-  // Clean up memory
-  const memFile = path.join(memoryDir(root), `${name}.md`);
-  if (fs.existsSync(memFile)) {
-    fs.unlinkSync(memFile);
-    logger.success(`已清理 memory: ${name}`);
+  const parts: string[] = [];
+  if (result.worktree) parts.push("worktree + 分支");
+  if (result.memory) parts.push("memory");
+  if (result.log) parts.push("log");
+
+  if (parts.length > 0) {
+    logger.success(`已清理: ${parts.join(", ")}`);
   }
 
   logger.success(`已移除任务: ${name}`);

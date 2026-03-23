@@ -171,7 +171,7 @@ rw add "fix-camera-fov: 修复透视相机 FOV 转换"
 
 ### `rw remove`
 
-从 `TODO.md` 移除任务，同时清理对应的 worktree、分支和 memory。
+从 `TODO.md` 移除任务，同时清理对应的 worktree、分支、memory 和日志。
 
 ```bash
 rw remove fix-camera-fov
@@ -181,7 +181,7 @@ rw rm fix-camera-fov
 
 ### `rw clean`
 
-清理所有 worktree、分支和 memory。
+清理所有任务的 worktree、分支、memory 和日志，恢复到干净状态。与 `rw remove` 行为一致，但作用于所有任务。
 
 ```bash
 rw clean

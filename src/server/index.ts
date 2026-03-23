@@ -56,7 +56,7 @@ export function startServer(opts: ServerOptions): http.Server {
   const { port } = opts;
   const staticDir = path.join(
     path.dirname(new URL(import.meta.url).pathname),
-    "../../dist/web"
+    "web"
   );
 
   const server = http.createServer(async (req, res) => {
@@ -71,7 +71,14 @@ export function startServer(opts: ServerOptions): http.Server {
   });
 
   server.listen(port, () => {
-    logger.success(`Web 看板已启动: http://localhost:${port}`);
+    const url = `http://localhost:${port}`;
+    logger.success(`Web 看板已启动: ${url}`);
+
+    // Auto open browser
+    import("child_process").then(({ exec }) => {
+      const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+      exec(`${cmd} ${url}`);
+    });
   });
 
   return server;

@@ -1,0 +1,33 @@
+{
+  "name": "ralph-worktree",
+  "version": "0.1.0",
+  "description": "Multi-task parallel autonomous development tool with git worktree isolation",
+  "type": "module",
+  "bin": {
+    "rw": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "execa": "^9.5.2",
+    "p-limit": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT"
+}

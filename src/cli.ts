@@ -19,7 +19,8 @@ program
 program
   .command("init")
   .description("在当前 git 仓库初始化 .rw/ 目录")
-  .action(initCommand);
+  .option("--force", "重置模板文件（保留 state、memory、logs）")
+  .action((opts) => initCommand({ force: opts.force }));
 
 program
   .command("run [task]")

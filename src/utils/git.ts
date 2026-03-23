@@ -84,14 +84,28 @@ export async function gitMerge(
   branch: string,
   into: string,
   cwd?: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; conflict?: boolean; error?: string }> {
   try {
     await execa("git", ["checkout", into], { cwd });
     await execa("git", ["merge", branch, "--no-ff", "-m", `Merge ${branch} into ${into}`], { cwd });
     return { success: true };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    const conflict = err.message?.includes("CONFLICT") || err.message?.includes("fix conflicts");
+    return { success: false, conflict, error: err.message };
   }
+}
+
+export async function gitMergeAbort(cwd?: string): Promise<void> {
+  try {
+    await execa("git", ["merge", "--abort"], { cwd });
+  } catch {
+    // may not be in a merge state
+  }
+}
+
+export async function gitConflictFiles(cwd?: string): Promise<string[]> {
+  const { stdout } = await execa("git", ["diff", "--name-only", "--diff-filter=U"], { cwd });
+  return stdout.trim().split("\n").filter(Boolean);
 }
 
 export async function addToGitExclude(

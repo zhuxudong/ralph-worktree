@@ -31,6 +31,10 @@ export function logsDir(root: string): string {
   return path.join(root, RW_DIR, "logs");
 }
 
+export function memoryDir(root: string): string {
+  return path.join(root, RW_DIR, "memory");
+}
+
 export function statePath(root: string): string {
   return path.join(root, RW_DIR, "state.json");
 }
@@ -55,6 +59,19 @@ export function readSpecs(root: string): string {
       return `### ${f}\n${content}`;
     })
     .join("\n\n");
+}
+
+export function readMemory(root: string): string {
+  const dir = memoryDir(root);
+  if (!fs.existsSync(dir)) return "";
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+  if (files.length === 0) return "";
+  return files
+    .map((f) => {
+      const content = fs.readFileSync(path.join(dir, f), "utf-8");
+      return `- **${f.replace(".md", "")}**: ${content.trim()}`;
+    })
+    .join("\n");
 }
 
 export function ensureRwDir(root: string): boolean {

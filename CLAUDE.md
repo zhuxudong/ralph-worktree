@@ -20,7 +20,7 @@ npm link             # Install `rw` command globally (after build)
 
 ## Architecture
 
-**Execution flow:** `rw run` → parse `.rw/TODO.md` → build agent prompts from `PROMPT.md + RULES.md + specs/` → scheduler dispatches all tasks in parallel → each task gets an isolated worktree → agent loop calls `claude --print` iteratively → circuit breaker prevents infinite loops → results written to `.rw/state.json`.
+**Execution flow:** `rw run` → parse `.rw/TODO.md` → build agent prompts from `PROMPT.md + RULES.md + specs/ + memory/` → scheduler dispatches all tasks in parallel → each task gets an isolated worktree → agent loop calls `claude --print` iteratively → circuit breaker prevents infinite loops → completed task summaries written to `.rw/memory/<task>.md` → results written to `.rw/state.json`.
 
 **Key layers:**
 
@@ -51,4 +51,6 @@ TypeScript (strict, ES2022/ESNext), tsup for bundling, vitest for testing, Comma
 
 ## `.rw/` Directory (User Projects)
 
-Created by `rw init` in target repos. Contains `PROMPT.md`, `TODO.md`, `RULES.md`, `specs/`, `worktrees/`, `logs/`, `state.json`. Templates live in `templates/` and are embedded inline at build time (see `src/commands/init.ts`).
+Created by `rw init` in target repos. Contains `PROMPT.md` (with workflow instructions), `TODO.md`, `RULES.md`, `specs/`, `memory/` (auto-generated task summaries), `worktrees/`, `logs/`, `state.json`. Templates are embedded inline in `src/commands/init.ts`.
+
+**Memory mechanism:** When a task completes successfully, its SUMMARY is written to `.rw/memory/<task-name>.md`. When building prompts for subsequent tasks, all memory files are injected as "Completed Tasks" context. This allows later tasks to be aware of what earlier tasks accomplished, without requiring all tasks to share context at runtime.

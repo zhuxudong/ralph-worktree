@@ -98,10 +98,11 @@ rw init
 生成结构：
 ```
 .rw/
-├── PROMPT.md      # 项目目标与原则
+├── PROMPT.md      # 项目目标与原则（含工作流说明）
 ├── TODO.md        # 任务列表
 ├── RULES.md       # 经验规则
 ├── specs/         # 补充规格（按需添加）
+├── memory/        # 已完成任务的摘要（自动生成，供后续任务感知）
 ├── worktrees/     # worktree 工作目录（自动管理）
 ├── logs/          # 任务日志（自动生成）
 └── state.json     # 运行状态（自动管理）
@@ -181,6 +182,8 @@ rw run
   ├── 解析 .rw/TODO.md → 提取所有 [ ] 待办任务
   ├── 读取 .rw/PROMPT.md + .rw/RULES.md → 构建 agent 上下文
   │
+  ├── 读取 .rw/memory/*.md → 注入已完成任务的摘要（如果有）
+  │
   ├── 所有任务并行执行
   │   ├── task-a → git worktree add → Claude agent 循环
   │   ├── task-b → （并行）
@@ -193,6 +196,7 @@ rw run
   │   ├── 熔断器检测（3 次无进展 或 5 次相同错误 → 中断）
   │   └── 退出检测（COMPLETE / BLOCKED → 结束循环）
   │
+  ├── 任务完成 → 写入 .rw/memory/<task-name>.md（供后续任务感知）
   ├── 更新 TODO.md 状态标记
   └── 写入 .rw/logs/ 和 .rw/state.json
 ```

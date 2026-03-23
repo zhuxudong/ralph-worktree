@@ -3,7 +3,7 @@ import fs from "node:fs";
 export interface Task {
   name: string;
   description: string;
-  status: "pending" | "running" | "done" | "failed";
+  status: "pending" | "running" | "done" | "failed" | "deleted";
 }
 
 const STATUS_MAP: Record<string, Task["status"]> = {
@@ -11,6 +11,7 @@ const STATUS_MAP: Record<string, Task["status"]> = {
   "~": "running",
   x: "done",
   "!": "failed",
+  "-": "deleted",
 };
 
 const REVERSE_STATUS: Record<Task["status"], string> = {
@@ -18,9 +19,10 @@ const REVERSE_STATUS: Record<Task["status"], string> = {
   running: "~",
   done: "x",
   failed: "!",
+  deleted: "-",
 };
 
-const TASK_RE = /^- \[([x ~!])\] (\S+?):\s*(.+)$/;
+const TASK_RE = /^- \[([x ~!\-])\] (\S+?):\s*(.+)$/;
 
 export function parseTodo(content: string): Task[] {
   const tasks: Task[] = [];
@@ -68,11 +70,5 @@ export function addTask(
 }
 
 export function removeTask(todoPath: string, name: string): void {
-  const content = fs.readFileSync(todoPath, "utf-8");
-  const lines = content.split("\n");
-  const filtered = lines.filter((line) => {
-    const match = line.match(TASK_RE);
-    return !(match && match[2] === name);
-  });
-  fs.writeFileSync(todoPath, filtered.join("\n"));
+  updateTaskStatus(todoPath, name, "deleted");
 }

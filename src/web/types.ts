@@ -1,12 +1,12 @@
 export interface Task {
   name: string;
   description: string;
-  status: "pending" | "running" | "done" | "failed";
+  status: "pending" | "running" | "done" | "failed" | "deleted";
 }
 
 export interface TaskState {
   name: string;
-  status: "pending" | "running" | "done" | "failed" | "breaker";
+  status: "pending" | "running" | "done" | "failed" | "deleted" | "breaker";
   branch: string;
   worktreePath: string;
   loops: number;

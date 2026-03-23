@@ -1,4 +1,3 @@
-import pLimit from "p-limit";
 import type { Task } from "./todo-parser.js";
 import { updateTaskStatus } from "./todo-parser.js";
 import { provision, cleanup } from "./worktree.js";
@@ -11,7 +10,6 @@ export interface SchedulerOptions {
   root: string;
   tasks: Task[];
   base: string;
-  concurrency: number;
   maxLoops: number;
   timeoutMs: number;
 }
@@ -62,11 +60,10 @@ SUMMARY: <one-line summary of what you did>
 export async function runScheduler(
   opts: SchedulerOptions
 ): Promise<TaskResult[]> {
-  const limit = pLimit(opts.concurrency);
   const results: TaskResult[] = [];
 
   const promises = opts.tasks.map((task) =>
-    limit(async () => {
+    (async () => {
       const td = todoPath(opts.root);
 
       // Mark running
@@ -124,7 +121,7 @@ export async function runScheduler(
         `已完成: ${result.status}（${result.loops} 次循环）`
       );
       results.push({ task, result });
-    })
+    })()
   );
 
   await Promise.all(promises);

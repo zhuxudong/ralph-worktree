@@ -25,13 +25,11 @@ program
   .command("run [task]")
   .description("执行待办任务（或指定任务），使用 Claude agent 并行处理")
   .option("--base <branch>", "worktree 的基础分支")
-  .option("-c, --concurrency <n>", "最大并行任务数", "3")
   .option("--max-loops <n>", "每个任务最大 agent 循环次数", "20")
   .option("--timeout <minutes>", "单次 agent 调用超时（分钟）", "15")
   .action((task, opts) =>
     runCommand(task, {
       base: opts.base,
-      concurrency: parseInt(opts.concurrency, 10),
       maxLoops: parseInt(opts.maxLoops, 10),
       timeout: parseInt(opts.timeout, 10),
     })

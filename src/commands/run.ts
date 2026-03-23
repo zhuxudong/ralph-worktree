@@ -8,7 +8,6 @@ import { logger } from "../utils/logger.js";
 
 export interface RunOptions {
   base?: string;
-  concurrency?: number;
   maxLoops?: number;
   timeout?: number;
   task?: string;
@@ -41,12 +40,11 @@ export async function runCommand(taskName?: string, opts: RunOptions = {}) {
   }
 
   const base = opts.base ?? (await gitCurrentBranch());
-  const concurrency = opts.concurrency ?? 3;
   const maxLoops = opts.maxLoops ?? 20;
   const timeoutMs = (opts.timeout ?? 15) * 60 * 1000;
 
   logger.info(
-    `正在执行 ${pending.length} 个任务，并发数=${concurrency}，基础分支=${base}`
+    `正在执行 ${pending.length} 个任务，基础分支=${base}`
   );
 
   // Setup logs
@@ -64,7 +62,6 @@ export async function runCommand(taskName?: string, opts: RunOptions = {}) {
     root,
     tasks: pending,
     base,
-    concurrency,
     maxLoops,
     timeoutMs,
   });

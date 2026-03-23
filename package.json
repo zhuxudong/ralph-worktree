@@ -17,8 +17,7 @@
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^13.1.0",
-    "execa": "^9.5.2",
-    "p-limit": "^6.2.0"
+    "execa": "^9.5.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

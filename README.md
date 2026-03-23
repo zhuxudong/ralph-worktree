@@ -121,9 +121,6 @@ rw run fix-camera-fov
 # 指定基础分支（默认为当前分支）
 rw run --base dev
 
-# 调整并发数（默认 3）
-rw run -c 5
-
 # 调整最大循环次数（默认 20）和超时（默认 15 分钟）
 rw run --max-loops 10 --timeout 30
 ```
@@ -184,7 +181,7 @@ rw run
   ├── 解析 .rw/TODO.md → 提取所有 [ ] 待办任务
   ├── 读取 .rw/PROMPT.md + .rw/RULES.md → 构建 agent 上下文
   │
-  ├── 并发池（p-limit，默认并发数 3）
+  ├── 所有任务并行执行
   │   ├── task-a → git worktree add → Claude agent 循环
   │   ├── task-b → （并行）
   │   └── task-c → （并行）

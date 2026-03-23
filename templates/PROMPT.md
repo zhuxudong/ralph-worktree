@@ -1,8 +1,8 @@
-# Project Goal
+# 项目目标
 
-Describe your project's goal here.
+在这里描述你的项目目标。
 
-# Principles
+# 原则
 
-- Principle 1
-- Principle 2
+- 原则 1
+- 原则 2

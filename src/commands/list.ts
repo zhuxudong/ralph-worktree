@@ -17,7 +17,7 @@ export async function listCommand() {
   const root = await gitRootDir();
 
   if (!ensureRwDir(root)) {
-    logger.error(".rw/ not found. Run `rw init` first.");
+    logger.error("未找到 .rw/ 目录，请先运行 `rw init`。");
     process.exit(1);
   }
 
@@ -26,15 +26,15 @@ export async function listCommand() {
   const tasks = parseTodo(content);
 
   if (tasks.length === 0) {
-    logger.info("No tasks in TODO.md");
+    logger.info("TODO.md 中没有任务。");
     return;
   }
 
   const table = new Table({
     head: [
-      chalk.bold("Task"),
-      chalk.bold("Status"),
-      chalk.bold("Description"),
+      chalk.bold("任务"),
+      chalk.bold("状态"),
+      chalk.bold("描述"),
     ],
     colWidths: [25, 18, 50],
     wordWrap: true,
@@ -54,6 +54,6 @@ export async function listCommand() {
   };
 
   logger.info(
-    `Total: ${tasks.length} | Pending: ${counts.pending} | Running: ${counts.running} | Done: ${counts.done} | Failed: ${counts.failed}`
+    `总计: ${tasks.length} | 待做: ${counts.pending} | 进行中: ${counts.running} | 完成: ${counts.done} | 失败: ${counts.failed}`
   );
 }

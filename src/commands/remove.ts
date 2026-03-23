@@ -7,10 +7,10 @@ export async function removeCommand(name: string) {
   const root = await gitRootDir();
 
   if (!ensureRwDir(root)) {
-    logger.error(".rw/ not found. Run `rw init` first.");
+    logger.error("未找到 .rw/ 目录，请先运行 `rw init`。");
     process.exit(1);
   }
 
   removeTask(todoPath(root), name);
-  logger.success(`Removed task: ${name}`);
+  logger.success(`已移除任务: ${name}`);
 }

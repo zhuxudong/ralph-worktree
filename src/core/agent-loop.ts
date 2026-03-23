@@ -29,12 +29,12 @@ export async function runAgentLoop(
     if (breaker.isOpen()) {
       logger.task(
         opts.taskName,
-        `Circuit breaker opened after ${i} loops`
+        `熔断器触发，已执行 ${i} 次循环`
       );
       return { status: "breaker", loops: i };
     }
 
-    logger.task(opts.taskName, `Loop ${i + 1}/${opts.maxLoops}`);
+    logger.task(opts.taskName, `循环 ${i + 1}/${opts.maxLoops}`);
 
     try {
       const response = await callClaude(opts);
@@ -53,7 +53,7 @@ export async function runAgentLoop(
       if (detector.shouldExit(agentStatus)) {
         logger.task(
           opts.taskName,
-          `Exiting: ${agentStatus.status} - ${agentStatus.summary}`
+          `退出: ${agentStatus.status} - ${agentStatus.summary}`
         );
         return {
           status: agentStatus.status === "BLOCKED" ? "failed" : "done",
@@ -62,12 +62,12 @@ export async function runAgentLoop(
         };
       }
     } catch (err: any) {
-      logger.task(opts.taskName, `Error in loop ${i + 1}: ${err.message}`);
+      logger.task(opts.taskName, `循环 ${i + 1} 出错: ${err.message}`);
       breaker.record({ hasChanges: false, error: err.message });
     }
   }
 
-  logger.task(opts.taskName, `Max loops (${opts.maxLoops}) reached`);
+  logger.task(opts.taskName, `已达最大循环次数（${opts.maxLoops}）`);
   return { status: "failed", loops: opts.maxLoops };
 }
 

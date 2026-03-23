@@ -1,7 +1,7 @@
 {
   "name": "ralph-worktree",
   "version": "0.1.0",
-  "description": "Multi-task parallel autonomous development tool with git worktree isolation",
+  "description": "多任务并行自治开发工具，基于 git worktree 隔离 + Claude Code 自主执行",
   "type": "module",
   "bin": {
     "rw": "./dist/cli.js"

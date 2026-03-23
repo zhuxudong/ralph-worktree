@@ -12,7 +12,7 @@ export async function mergeCommand(opts: MergeOptions = {}) {
   const root = await gitRootDir();
 
   if (!ensureRwDir(root)) {
-    logger.error(".rw/ not found. Run `rw init` first.");
+    logger.error("未找到 .rw/ 目录，请先运行 `rw init`。");
     process.exit(1);
   }
 
@@ -23,21 +23,21 @@ export async function mergeCommand(opts: MergeOptions = {}) {
 
   const doneTasks = tasks.filter((t) => t.status === "done");
   if (doneTasks.length === 0) {
-    logger.info("No completed tasks to merge.");
+    logger.info("没有已完成的任务可合并。");
     return;
   }
 
-  logger.info(`Merging ${doneTasks.length} completed branch(es) into ${into}`);
+  logger.info(`正在将 ${doneTasks.length} 个已完成分支合并到 ${into}`);
 
   for (const task of doneTasks) {
     const branch = `rw/${task.name}`;
-    logger.info(`Merging ${branch}...`);
+    logger.info(`正在合并 ${branch}...`);
 
     const result = await gitMerge(branch, into, root);
     if (result.success) {
-      logger.success(`Merged ${branch} into ${into}`);
+      logger.success(`已合并 ${branch} 到 ${into}`);
     } else {
-      logger.error(`Failed to merge ${branch}: ${result.error}`);
+      logger.error(`合并 ${branch} 失败: ${result.error}`);
     }
   }
 }

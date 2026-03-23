@@ -77,18 +77,18 @@ export async function runScheduler(
         startedAt: new Date().toISOString(),
       });
 
-      logger.task(task.name, "Provisioning worktree...");
+      logger.task(task.name, "正在创建 worktree...");
 
       let wtPath: string;
       try {
         wtPath = await provision(opts.root, task, opts.base);
       } catch (err: any) {
-        logger.task(task.name, `Failed to provision worktree: ${err.message}`);
+        logger.task(task.name, `创建 worktree 失败: ${err.message}`);
         updateTaskStatus(td, task.name, "failed");
         updateTaskState(opts.root, task.name, {
           status: "failed",
           finishedAt: new Date().toISOString(),
-          summary: `Worktree provision failed: ${err.message}`,
+          summary: `worktree 创建失败: ${err.message}`,
         });
         results.push({
           task,
@@ -98,7 +98,7 @@ export async function runScheduler(
       }
 
       updateTaskState(opts.root, task.name, { worktreePath: wtPath });
-      logger.task(task.name, `Worktree ready at ${wtPath}`);
+      logger.task(task.name, `worktree 就绪: ${wtPath}`);
 
       const prompt = buildPrompt(opts.root, task);
       const result = await runAgentLoop({
@@ -121,7 +121,7 @@ export async function runScheduler(
 
       logger.task(
         task.name,
-        `Finished: ${result.status} (${result.loops} loops)`
+        `已完成: ${result.status}（${result.loops} 次循环）`
       );
       results.push({ task, result });
     })

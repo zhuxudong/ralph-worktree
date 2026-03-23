@@ -5,22 +5,22 @@ import { gitRootDir, addToGitExclude } from "../utils/git.js";
 import { logger } from "../utils/logger.js";
 
 const TEMPLATES: Record<string, string> = {
-  "PROMPT.md": `# Project Goal
+  "PROMPT.md": `# 项目目标
 
-Describe your project's goal here.
+在这里描述你的项目目标。
 
-# Principles
+# 原则
 
-- Principle 1
-- Principle 2
+- 原则 1
+- 原则 2
 `,
   "TODO.md": `# Tasks
 
-- [ ] example-task: Replace this with your first task description
+- [ ] example-task: 用你的第一个任务替换这里的描述
 `,
   "RULES.md": `# Rules
 
-- Add rules and lessons learned here to prevent repeating mistakes
+- 在这里添加经验规则，避免重蹈覆辙
 `,
 };
 
@@ -29,33 +29,29 @@ export async function initCommand() {
   const rw = rwDir(root);
 
   if (fs.existsSync(rw)) {
-    logger.warn(".rw/ already exists. Skipping init.");
+    logger.warn(".rw/ 目录已存在，跳过初始化。");
     return;
   }
 
-  // Create directories
   fs.mkdirSync(rw, { recursive: true });
   fs.mkdirSync(specsDir(root), { recursive: true });
   fs.mkdirSync(worktreesDir(root), { recursive: true });
   fs.mkdirSync(logsDir(root), { recursive: true });
 
-  // Write templates
   for (const [file, content] of Object.entries(TEMPLATES)) {
     fs.writeFileSync(path.join(rw, file), content);
   }
 
-  // Initialize state.json
   fs.writeFileSync(
     path.join(rw, "state.json"),
     JSON.stringify({ startedAt: null, tasks: [] }, null, 2)
   );
 
-  // Add .rw/ to git exclude
   await addToGitExclude(root, ".rw/");
 
-  logger.success("Initialized .rw/ directory");
-  logger.info("Edit these files to get started:");
-  logger.info("  .rw/PROMPT.md  - Project goal & principles");
-  logger.info("  .rw/TODO.md    - Task list");
-  logger.info("  .rw/RULES.md   - Rules & lessons learned");
+  logger.success("已初始化 .rw/ 目录");
+  logger.info("编辑以下文件开始使用：");
+  logger.info("  .rw/PROMPT.md  — 项目目标与原则");
+  logger.info("  .rw/TODO.md    — 任务列表");
+  logger.info("  .rw/RULES.md   — 经验规则");
 }

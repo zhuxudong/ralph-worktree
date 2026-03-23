@@ -1,3 +1,3 @@
 # Rules
 
-- Add rules and lessons learned here to prevent repeating mistakes
+- 在这里添加经验规则，避免重蹈覆辙

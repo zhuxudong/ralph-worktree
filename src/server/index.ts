@@ -1,0 +1,78 @@
+import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { handleRequest } from "./routes.js";
+import { logger } from "../utils/logger.js";
+
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+};
+
+function serveStatic(
+  res: http.ServerResponse,
+  staticDir: string,
+  pathname: string
+): void {
+  // Default to index.html for SPA routing
+  let filePath = path.join(staticDir, pathname === "/" ? "index.html" : pathname);
+
+  // Security: prevent path traversal
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(path.resolve(staticDir))) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
+  }
+
+  if (!fs.existsSync(resolved) || fs.statSync(resolved).isDirectory()) {
+    // SPA fallback: serve index.html for non-file routes
+    filePath = path.join(staticDir, "index.html");
+  }
+
+  if (!fs.existsSync(filePath)) {
+    res.writeHead(404);
+    res.end("Not found");
+    return;
+  }
+
+  const ext = path.extname(filePath);
+  const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
+  const content = fs.readFileSync(filePath);
+  res.writeHead(200, { "Content-Type": contentType });
+  res.end(content);
+}
+
+export interface ServerOptions {
+  port: number;
+}
+
+export function startServer(opts: ServerOptions): http.Server {
+  const { port } = opts;
+  const staticDir = path.join(
+    path.dirname(new URL(import.meta.url).pathname),
+    "../../dist/web"
+  );
+
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+
+    // Try API routes first
+    const handled = await handleRequest(req, res);
+    if (handled) return;
+
+    // Serve static files
+    serveStatic(res, staticDir, url.pathname);
+  });
+
+  server.listen(port, () => {
+    logger.success(`Web 看板已启动: http://localhost:${port}`);
+  });
+
+  return server;
+}

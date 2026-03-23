@@ -4,7 +4,25 @@ import { rwDir, specsDir, worktreesDir, logsDir } from "../core/config.js";
 import { gitRootDir, addToGitExclude } from "../utils/git.js";
 import { logger } from "../utils/logger.js";
 
-const TEMPLATES_DIR = new URL("../../templates", import.meta.url).pathname;
+const TEMPLATES: Record<string, string> = {
+  "PROMPT.md": `# Project Goal
+
+Describe your project's goal here.
+
+# Principles
+
+- Principle 1
+- Principle 2
+`,
+  "TODO.md": `# Tasks
+
+- [ ] example-task: Replace this with your first task description
+`,
+  "RULES.md": `# Rules
+
+- Add rules and lessons learned here to prevent repeating mistakes
+`,
+};
 
 export async function initCommand() {
   const root = await gitRootDir();
@@ -21,11 +39,9 @@ export async function initCommand() {
   fs.mkdirSync(worktreesDir(root), { recursive: true });
   fs.mkdirSync(logsDir(root), { recursive: true });
 
-  // Copy templates
-  for (const file of ["PROMPT.md", "TODO.md", "RULES.md"]) {
-    const src = path.join(TEMPLATES_DIR, file);
-    const dest = path.join(rw, file);
-    fs.copyFileSync(src, dest);
+  // Write templates
+  for (const [file, content] of Object.entries(TEMPLATES)) {
+    fs.writeFileSync(path.join(rw, file), content);
   }
 
   // Initialize state.json

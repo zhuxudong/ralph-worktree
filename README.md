@@ -2,7 +2,7 @@
 
 多任务并行自治开发工具，基于 git worktree 隔离 + Claude Code 自主执行。
 
-用户只需关注 3 个文件（`PROMPT.md`、`TODO.md`、`RULES.md`），工具自动完成任务调度、worktree 管理和 agent 循环。
+用户只需关注几个文件（`PROMPT.md`、`TODO.md`、`RULES.md`、`specs/`），工具自动完成任务调度、worktree 管理和 agent 循环。
 
 ## 安装
 
@@ -24,10 +24,11 @@ npm link
 cd your-project
 rw init
 
-# 2. 编辑 3 个核心文件
+# 2. 编辑核心文件
 #    .rw/PROMPT.md  — 项目目标与原则
 #    .rw/TODO.md    — 任务列表
 #    .rw/RULES.md   — 经验规则
+#    .rw/specs/     — 复杂任务的详细需求（可选，同名文件自动关联）
 
 # 3. 执行所有待办任务
 rw run
@@ -85,6 +86,30 @@ rw list
 - FOV 转换要区分水平/垂直，Cocos 用水平 FOV，Galacean 用垂直 FOV
 ```
 
+### `.rw/specs/` — 任务详细需求
+
+TODO.md 中的描述只有一行，对于复杂任务，可以在 `specs/` 下创建同名 `.md` 文件，支持任意长度的图文描述。
+
+```markdown
+TODO.md:
+- [ ] fix-camera-fov: 修复透视相机 FOV 转换
+
+specs/fix-camera-fov.md:  ← 同名文件，自动关联
+# 修复透视相机 FOV 转换
+
+## 背景
+Cocos 使用水平 FOV，Galacean 使用垂直 FOV，需要根据宽高比进行换算...
+
+## 具体要求
+1. 透视相机：horizontalFOV → verticalFOV
+2. 正交相机：保持 size 不变
+...
+```
+
+- `specs/<task-name>.md` 会作为**任务专属 spec** 注入到对应 agent
+- `specs/` 下的其他文件会作为**全局 spec** 注入到所有 agent
+- 不存在同名文件则跳过，不影响简单任务
+
 ## 命令
 
 ### `rw init`
@@ -98,10 +123,10 @@ rw init
 生成结构：
 ```
 .rw/
-├── PROMPT.md      # 项目目标与原则（含工作流说明）
+├── PROMPT.md      # 项目目标与原则
 ├── TODO.md        # 任务列表
 ├── RULES.md       # 经验规则
-├── specs/         # 补充规格（按需添加）
+├── specs/         # 任务详细需求（按需添加，同名文件自动关联任务）
 ├── memory/        # 已完成任务的摘要（自动生成，供后续任务感知）
 ├── worktrees/     # worktree 工作目录（自动管理）
 ├── logs/          # 任务日志（自动生成）
@@ -146,7 +171,7 @@ rw add "fix-camera-fov: 修复透视相机 FOV 转换"
 
 ### `rw remove`
 
-从 `TODO.md` 移除任务。
+从 `TODO.md` 移除任务，同时清理对应的 worktree、分支和 memory。
 
 ```bash
 rw remove fix-camera-fov
@@ -156,7 +181,7 @@ rw rm fix-camera-fov
 
 ### `rw clean`
 
-清理所有 worktree 及其分支。
+清理所有 worktree、分支和 memory。
 
 ```bash
 rw clean
@@ -164,7 +189,7 @@ rw clean
 
 ### `rw merge`
 
-将已完成任务的分支合并到目标分支。
+将已完成任务的分支合并到目标分支。遇到冲突时自动调用 Claude agent 解决（基于 memory 和 rules 上下文）。
 
 ```bash
 # 合并到当前分支
@@ -180,9 +205,8 @@ rw merge --into dev
 rw run
   │
   ├── 解析 .rw/TODO.md → 提取所有 [ ] 待办任务
-  ├── 读取 .rw/PROMPT.md + .rw/RULES.md → 构建 agent 上下文
-  │
-  ├── 读取 .rw/memory/*.md → 注入已完成任务的摘要（如果有）
+  ├── 读取 PROMPT.md + RULES.md + specs/ + memory/ → 构建 agent 上下文
+  │   └── specs/<task-name>.md 自动关联为任务专属需求
   │
   ├── 所有任务并行执行
   │   ├── task-a → git worktree add → Claude agent 循环

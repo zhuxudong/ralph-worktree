@@ -28,48 +28,36 @@ const TEMPLATES: Record<string, string> = {
 `,
 };
 
-export async function initCommand(opts: { force?: boolean } = {}) {
+export async function initCommand() {
   const root = await gitRootDir();
   const rw = rwDir(root);
 
-  if (fs.existsSync(rw) && !opts.force) {
-    logger.warn(".rw/ 目录已存在，跳过初始化。使用 --force 可重置模板文件。");
+  if (fs.existsSync(rw)) {
+    logger.warn(".rw/ 目录已存在，跳过初始化。");
     return;
   }
 
-  // Ensure directories
   fs.mkdirSync(rw, { recursive: true });
   fs.mkdirSync(specsDir(root), { recursive: true });
   fs.mkdirSync(worktreesDir(root), { recursive: true });
   fs.mkdirSync(logsDir(root), { recursive: true });
   fs.mkdirSync(memoryDir(root), { recursive: true });
 
-  // Write templates (--force overwrites existing)
   for (const [file, content] of Object.entries(TEMPLATES)) {
-    const filePath = path.join(rw, file);
-    if (opts.force || !fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, content);
-    }
+    fs.writeFileSync(path.join(rw, file), content);
   }
 
-  const statePath = path.join(rw, "state.json");
-  if (!fs.existsSync(statePath)) {
-    fs.writeFileSync(
-      statePath,
-      JSON.stringify({ startedAt: null, tasks: [] }, null, 2)
-    );
-  }
+  fs.writeFileSync(
+    path.join(rw, "state.json"),
+    JSON.stringify({ startedAt: null, tasks: [] }, null, 2)
+  );
 
   await addToGitExclude(root, ".rw/");
 
-  if (opts.force) {
-    logger.success("已重置 .rw/ 模板文件（PROMPT.md、TODO.md、RULES.md）");
-    logger.info("state.json、memory/、logs/ 已保留。");
-  } else {
-    logger.success("已初始化 .rw/ 目录");
-    logger.info("编辑以下文件开始使用：");
-    logger.info("  .rw/PROMPT.md  — 项目目标与原则");
-    logger.info("  .rw/TODO.md    — 任务列表");
-    logger.info("  .rw/RULES.md   — 经验规则");
-  }
+  logger.success("已初始化 .rw/ 目录");
+  logger.info("编辑以下文件开始使用：");
+  logger.info("  .rw/PROMPT.md  — 项目目标与原则");
+  logger.info("  .rw/TODO.md    — 任务列表");
+  logger.info("  .rw/RULES.md   — 经验规则");
+  logger.info("  .rw/specs/     — 复杂任务的详细需求（可选）");
 }

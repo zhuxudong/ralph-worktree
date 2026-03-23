@@ -3,7 +3,7 @@ import { updateTaskStatus } from "./todo-parser.js";
 import { provision } from "./worktree.js";
 import { runAgentLoop, type AgentLoopResult } from "./agent-loop.js";
 import { updateTaskState } from "./state.js";
-import { readPrompt, readRules, readSpecs, readMemory, memoryDir, todoPath } from "./config.js";
+import { readPrompt, readRules, readSpecs, readTaskSpec, readMemory, memoryDir, todoPath } from "./config.js";
 import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../utils/logger.js";
@@ -25,7 +25,8 @@ export interface TaskResult {
 function buildPrompt(root: string, task: Task): string {
   const prompt = readPrompt(root);
   const rules = readRules(root);
-  const specs = readSpecs(root);
+  const taskSpec = readTaskSpec(root, task.name);
+  const globalSpecs = readSpecs(root, task.name);
 
   let text = SYSTEM_INSTRUCTIONS + "\n";
 
@@ -37,8 +38,8 @@ function buildPrompt(root: string, task: Task): string {
     text += `## Rules (MUST follow)\n${rules}\n\n`;
   }
 
-  if (specs) {
-    text += `## Supplementary Specs\n${specs}\n\n`;
+  if (globalSpecs) {
+    text += `## Supplementary Specs\n${globalSpecs}\n\n`;
   }
 
   const memory = readMemory(root);
@@ -47,6 +48,10 @@ function buildPrompt(root: string, task: Task): string {
   }
 
   text += `## Current Task\n**${task.name}**: ${task.description}\n`;
+
+  if (taskSpec) {
+    text += `\n## Task Spec (详细需求)\n${taskSpec}\n`;
+  }
 
   return text;
 }

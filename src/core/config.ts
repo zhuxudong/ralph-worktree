@@ -49,10 +49,20 @@ export function readRules(root: string): string {
   return fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";
 }
 
-export function readSpecs(root: string): string {
+export function readTaskSpec(root: string, taskName: string): string {
+  const specFile = path.join(specsDir(root), `${taskName}.md`);
+  if (!fs.existsSync(specFile)) return "";
+  return fs.readFileSync(specFile, "utf-8");
+}
+
+export function readSpecs(root: string, excludeTask?: string): string {
   const dir = specsDir(root);
   if (!fs.existsSync(dir)) return "";
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".md"))
+    .filter((f) => !excludeTask || f !== `${excludeTask}.md`);
+  if (files.length === 0) return "";
   return files
     .map((f) => {
       const content = fs.readFileSync(path.join(dir, f), "utf-8");

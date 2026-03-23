@@ -199,6 +199,38 @@ rw merge
 rw merge --into dev
 ```
 
+### `rw web`
+
+启动 web 可视化看板，提供任务管理的 Web UI（类似 GitHub Projects 看板）。
+
+```bash
+# 启动 web 看板（默认端口 3700）
+rw web
+
+# 自定义端口
+rw web --port 8080
+
+# 启用 SSH 隧道（手机远程访问）
+rw web --tunnel --tunnel-host user@server.com
+
+# 启用 HTTP Basic Auth
+rw web --tunnel --tunnel-host user@server.com --tunnel-auth mypassword
+```
+
+功能：
+- 四列看板（待做 / 进行中 / 已完成 / 失败），支持任务增删和运行
+- SSE 实时推送任务状态变更和日志
+- SSH 反向隧道支持手机端远程访问
+
+开发模式：
+```bash
+# 终端 1: API server
+rw web
+
+# 终端 2: Vite dev server（前端热更新）
+npm run dev:web
+```
+
 ## 工作原理
 
 ```

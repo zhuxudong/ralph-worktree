@@ -1,0 +1,102 @@
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e1e4e8;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #24292e;
+  word-break: break-all;
+}
+
+.desc {
+  font-size: 12px;
+  color: #586069;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+
+  button {
+    flex: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #d1d5da;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.deleteBtn {
+  background: #fafbfc;
+  color: #cb2431;
+
+  &:hover:not(:disabled) {
+    background: #cb2431;
+    color: #fff;
+    border-color: #cb2431;
+  }
+}
+
+.runBtn {
+  background: #2ea44f;
+  color: #fff;
+  border-color: #2ea44f;
+
+  &:hover:not(:disabled) {
+    background: #22863a;
+  }
+}
+
+.progress {
+  font-size: 12px;
+  color: #0366d6;
+  font-weight: 500;
+}
+
+.summary {
+  font-size: 12px;
+  color: #22863a;
+  line-height: 1.4;
+}
+
+.error {
+  font-size: 12px;
+  color: #cb2431;
+  line-height: 1.4;
+}
+
+.pending {
+  border-left: 3px solid #d1d5da;
+}
+
+.running {
+  border-left: 3px solid #0366d6;
+}
+
+.done {
+  border-left: 3px solid #22863a;
+}
+
+.failed {
+  border-left: 3px solid #cb2431;
+}

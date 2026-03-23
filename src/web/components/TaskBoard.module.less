@@ -1,0 +1,40 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  align-items: start;
+}
+
+.column {
+  background: #f6f8fa;
+  border-radius: 8px;
+  min-height: 200px;
+}
+
+.header {
+  padding: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #24292e;
+  border-bottom: 1px solid #e1e4e8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  background: #d1d5da;
+  color: #24292e;
+  font-size: 12px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.cards {
+  padding: 8px;
+}

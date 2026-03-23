@@ -6,6 +6,7 @@ import { addCommand } from "./commands/add.js";
 import { removeCommand } from "./commands/remove.js";
 import { cleanCommand } from "./commands/clean.js";
 import { mergeCommand } from "./commands/merge.js";
+import { webCommand } from "./commands/web.js";
 
 const program = new Command();
 
@@ -62,5 +63,11 @@ program
   .description("将已完成任务的分支合并到目标分支")
   .option("--into <branch>", "目标分支")
   .action((opts) => mergeCommand({ into: opts.into }));
+
+program
+  .command("web")
+  .description("启动 web 看板（HTTP API server + 静态资源）")
+  .option("--port <port>", "HTTP server 端口", "3700")
+  .action((opts) => webCommand({ port: parseInt(opts.port, 10) }));
 
 program.parse();

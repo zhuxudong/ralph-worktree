@@ -26,15 +26,25 @@ export async function runCommand(taskName?: string, opts: RunOptions = {}) {
   let tasks = parseTodo(content);
 
   if (taskName) {
-    tasks = tasks.filter((t) => t.name === taskName);
-    if (tasks.length === 0) {
+    const task = tasks.find((t) => t.name === taskName);
+    if (!task) {
       logger.error(`任务 "${taskName}" 未在 TODO.md 中找到`);
       process.exit(1);
     }
+    if (task.status === "merged" || task.status === "deleted") {
+      logger.error(`任务 "${taskName}" 状态为 ${task.status}，无法运行`);
+      process.exit(1);
+    }
+    tasks = [task];
   }
 
-  const pending = tasks.filter((t) => t.status === "pending");
-  if (pending.length === 0) {
+  // Execute pending + running (interrupted) tasks; specific task also allows failed (retry)
+  const runnable = tasks.filter((t) =>
+    taskName
+      ? ["pending", "running", "failed"].includes(t.status)
+      : ["pending", "running"].includes(t.status)
+  );
+  if (runnable.length === 0) {
     logger.info("没有待执行的任务。");
     return;
   }
@@ -44,7 +54,7 @@ export async function runCommand(taskName?: string, opts: RunOptions = {}) {
   const timeoutMs = (opts.timeout ?? 15) * 60 * 1000;
 
   logger.info(
-    `正在执行 ${pending.length} 个任务，基础分支=${base}`
+    `正在执行 ${runnable.length} 个任务，基础分支=${base}`
   );
 
   // Setup logs
@@ -60,7 +70,7 @@ export async function runCommand(taskName?: string, opts: RunOptions = {}) {
 
   const results = await runScheduler({
     root,
-    tasks: pending,
+    tasks: runnable,
     base,
     maxLoops,
     timeoutMs,

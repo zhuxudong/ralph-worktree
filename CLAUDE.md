@@ -54,3 +54,13 @@ TypeScript (strict, ES2022/ESNext), tsup for bundling, vitest for testing, Comma
 Created by `rw init` in target repos. Contains `PROMPT.md` (with workflow instructions), `TODO.md`, `RULES.md`, `specs/`, `memory/` (auto-generated task summaries), `worktrees/`, `logs/`, `state.json`. Templates are embedded inline in `src/commands/init.ts`.
 
 **Memory mechanism:** When a task completes successfully, its SUMMARY is written to `.rw/memory/<task-name>.md`. When building prompts for subsequent tasks, all memory files are injected as "Completed Tasks" context. This allows later tasks to be aware of what earlier tasks accomplished, without requiring all tasks to share context at runtime.
+
+## Installed Skills (`.claude/skills/`)
+
+Project-level skills from [skills.sh](https://skills.sh) are installed in `.claude/skills/`. Claude Code automatically loads these when working in this repo or any worktree.
+
+- **vercel-react-best-practices** — React performance patterns and best practices from Vercel (re-render optimization, bundle splitting, async patterns, server components, etc.)
+- **frontend-ui-ux-engineer** — Frontend UI/UX design expertise (layout, typography, color, responsive design, accessibility)
+- **frontend-design** — Frontend design patterns and implementation guidance
+
+These skills enhance agent capabilities when working on web frontend tasks (e.g., the `src/web/` dashboard). Agents automatically benefit from these skills without any extra configuration.

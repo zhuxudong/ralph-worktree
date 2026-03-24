@@ -15,16 +15,9 @@ export async function provision(
   const wtPath = path.join(wtDir, task.name);
   const branch = `rw/${task.name}`;
 
-  // Remove existing worktree if present
+  // Reuse existing worktree if present (e.g. interrupted task)
   if (fs.existsSync(wtPath)) {
-    try {
-      await gitWorktreeRemove(wtPath, root);
-    } catch {
-      // force remove directory
-      fs.rmSync(wtPath, { recursive: true, force: true });
-    }
-    // Also delete the branch so we can recreate
-    await gitBranchDelete(branch, root);
+    return path.resolve(root, wtPath);
   }
 
   await gitWorktreeAdd(wtPath, branch, base, root);

@@ -67,10 +67,32 @@
   }
 }
 
+.clickable {
+  cursor: pointer;
+}
+
+.runningInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .progress {
   font-size: 12px;
   color: #0366d6;
   font-weight: 500;
+}
+
+.logPreview {
+  font-size: 11px;
+  color: #6a737d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: #f6f8fa;
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 
 .summary {

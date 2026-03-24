@@ -68,14 +68,17 @@ export function handleLogStream(
     Connection: "keep-alive",
   });
 
-  // Start watching this task's log file
+  // Send existing log content as initial payload before streaming new lines
+  const existingLines = watcher.getLogLines(taskName);
+  if (existingLines.length > 0) {
+    sendEvent(res, "log", { taskName, lines: existingLines });
+  }
+
+  // Start watching this task's log file (offset set to current size)
   watcher.watchLog(taskName);
 
-  // Send existing log content as initial payload
   const snap = watcher.snapshot();
   const taskState = snap.state.tasks.find((t) => t.name === taskName);
-  // We don't read the full log here—that's the job of GET /api/logs/:name
-  // The stream only sends increments from the point of connection
 
   const unsubscribe = watcher.subscribe((event: WatcherEvent) => {
     if (event.type !== "log") return;

@@ -23,7 +23,7 @@ export async function webCommand(opts: WebOptions = {}) {
   }
 
   const port = opts.port ?? 3700;
-  const server = startServer({ port });
+  const server = startServer({ port, root });
 
   // Start SSH tunnel if requested
   if (opts.tunnel) {

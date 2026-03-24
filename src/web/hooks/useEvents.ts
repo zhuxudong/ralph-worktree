@@ -12,6 +12,7 @@ interface TaskState {
   branch: string;
   worktreePath: string;
   loops: number;
+  maxLoops?: number;
   startedAt?: string;
   finishedAt?: string;
   summary?: string;
@@ -23,10 +24,14 @@ interface RunState {
   tasks: TaskState[];
 }
 
+/** Map of taskName → last log line (for preview in task cards). */
+export type LogPreviewMap = Record<string, string>;
+
 interface UseEventsReturn {
   tasks: Task[];
   state: RunState | null;
   connected: boolean;
+  logPreviews: LogPreviewMap;
 }
 
 /**
@@ -38,6 +43,7 @@ export function useEvents(): UseEventsReturn {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [state, setState] = useState<RunState | null>(null);
   const [connected, setConnected] = useState(false);
+  const [logPreviews, setLogPreviews] = useState<LogPreviewMap>({});
 
   useEffect(() => {
     const es = new EventSource("/api/events");
@@ -61,13 +67,25 @@ export function useEvents(): UseEventsReturn {
       }
     });
 
+    es.addEventListener("log", (e) => {
+      try {
+        const data = JSON.parse(e.data) as { taskName: string; lines: string[] };
+        if (data.lines.length > 0) {
+          const lastLine = data.lines[data.lines.length - 1];
+          setLogPreviews((prev) => ({ ...prev, [data.taskName]: lastLine }));
+        }
+      } catch {
+        // ignore
+      }
+    });
+
     return () => {
       es.close();
       setConnected(false);
     };
   }, []);
 
-  return { tasks, state, connected };
+  return { tasks, state, connected, logPreviews };
 }
 
 interface UseLogStreamReturn {
@@ -85,6 +103,7 @@ export function useLogStream(taskName: string): UseLogStreamReturn {
   const [lines, setLines] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   const esRef = useRef<EventSource | null>(null);
+  const doneRef = useRef(false);
 
   const disconnect = useCallback(() => {
     if (esRef.current) {
@@ -97,6 +116,7 @@ export function useLogStream(taskName: string): UseLogStreamReturn {
     disconnect();
     setLines([]);
     setDone(false);
+    doneRef.current = false;
 
     const es = new EventSource(`/api/logs/${encodeURIComponent(taskName)}/stream`);
     esRef.current = es;
@@ -111,17 +131,18 @@ export function useLogStream(taskName: string): UseLogStreamReturn {
     });
 
     es.addEventListener("done", () => {
+      doneRef.current = true;
       setDone(true);
     });
 
     es.onerror = () => {
       // EventSource will auto-reconnect, but if task is done we close
-      if (done) {
+      if (doneRef.current) {
         es.close();
         esRef.current = null;
       }
     };
-  }, [taskName, disconnect, done]);
+  }, [taskName, disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {

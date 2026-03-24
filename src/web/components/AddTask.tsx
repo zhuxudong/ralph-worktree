@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { addTask, smartParseTask } from "../hooks/useApi";
+import { useState, useEffect } from "react";
+import { addTask, smartParseTask, useEmployees, autoAssignEmployee } from "../hooks/useApi";
+import type { Employee } from "../types";
 import styles from "./AddTask.module.less";
 
 interface AddTaskProps {
@@ -12,6 +13,22 @@ export function AddTask({ onAdded, onClose }: AddTaskProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<{ name: string; description: string } | null>(null);
+  const { employees } = useEmployees();
+  const [assignee, setAssignee] = useState<string>("");
+  const [autoAssigned, setAutoAssigned] = useState(false);
+
+  // Auto-assign employee when preview description is available
+  useEffect(() => {
+    if (!preview || assignee) return;
+    let cancelled = false;
+    autoAssignEmployee(preview.description).then((emp) => {
+      if (!cancelled && emp) {
+        setAssignee(emp.id);
+        setAutoAssigned(true);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [preview]);
 
   const handleParse = async () => {
     if (!input.trim()) return;
@@ -32,7 +49,7 @@ export function AddTask({ onAdded, onClose }: AddTaskProps) {
     setLoading(true);
     setError("");
     try {
-      await addTask(preview.name, preview.description);
+      await addTask(preview.name, preview.description, assignee || undefined);
       onAdded();
     } catch (err: any) {
       setError(err.message);
@@ -69,6 +86,8 @@ export function AddTask({ onAdded, onClose }: AddTaskProps) {
             onChange={(e) => {
               setInput(e.target.value);
               setPreview(null);
+              setAssignee("");
+              setAutoAssigned(false);
               setError("");
             }}
             onKeyDown={handleKeyDown}
@@ -88,6 +107,30 @@ export function AddTask({ onAdded, onClose }: AddTaskProps) {
                 <span className={styles.previewLabel}>描述</span>
                 <span className={styles.previewValue}>{preview.description}</span>
               </div>
+            </div>
+          )}
+
+          {preview && employees.length > 0 && (
+            <div className={styles.assigneeSection}>
+              <label className={styles.assigneeLabel}>
+                指派员工
+                {autoAssigned && <span className={styles.autoTag}>自动匹配</span>}
+              </label>
+              <select
+                className={styles.assigneeSelect}
+                value={assignee}
+                onChange={(e) => {
+                  setAssignee(e.target.value);
+                  setAutoAssigned(false);
+                }}
+              >
+                <option value="">不指派</option>
+                {employees.map((emp: Employee) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name}（{emp.role}）
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

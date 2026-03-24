@@ -167,10 +167,17 @@ rw ls
 
 ### `rw add`
 
-添加任务到 `TODO.md`。
+添加任务到 `TODO.md`。支持手动指派或自动匹配数字员工。
 
 ```bash
+# 基本用法
 rw add "fix-camera-fov: 修复透视相机 FOV 转换"
+
+# 手动指派数字员工
+rw add "fix-camera-fov: 修复透视相机 FOV 转换" --assignee frontend-dev
+
+# 禁用自动指派
+rw add "fix-camera-fov: 修复透视相机 FOV 转换" --no-auto-assign
 ```
 
 ### `rw remove`

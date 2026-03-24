@@ -5,6 +5,7 @@ import { ContextMenu, type MenuItem } from "./components/ContextMenu";
 import { LogPanel } from "./components/LogPanel";
 import { DiffPanel } from "./components/DiffPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
+import { EmployeePanel } from "./components/EmployeePanel";
 import {
   useTasks,
   useRunState,
@@ -24,6 +25,7 @@ export function App() {
   const { tasks: liveTasks, state: liveState, connected } = useEvents();
   const [acting, setActing] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [showEmployees, setShowEmployees] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
   // Context menu state
@@ -207,6 +209,12 @@ export function App() {
             </button>
           )}
           <button
+            className={styles.btn}
+            onClick={() => setShowEmployees(true)}
+          >
+            员工管理
+          </button>
+          <button
             className={styles.addBtn}
             onClick={() => setShowAddTask(true)}
           >
@@ -263,6 +271,10 @@ export function App() {
           taskName={memoryTask}
           onClose={() => setMemoryTask(null)}
         />
+      )}
+
+      {showEmployees && (
+        <EmployeePanel onClose={() => setShowEmployees(false)} />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { todoPath, logsDir, memoryDir, worktreesDir, ensureRwDir } from "../core/config.js";
 import { parseTodo, addTask, removeTask, updateTaskStatus } from "../core/todo-parser.js";
+import { loadEmployees, addEmployee as saveEmployee, removeEmployee as deleteEmployee, autoAssign } from "../core/employee.js";
 import { loadState } from "../core/state.js";
 import { gitRootDir, gitCurrentBranch } from "../utils/git.js";
 import { runScheduler } from "../core/scheduler.js";
@@ -67,12 +68,12 @@ export async function handleRequest(
     // POST /api/tasks
     if (method === "POST" && pathname === "/api/tasks") {
       const body = JSON.parse(await readBody(req));
-      const { name, description } = body;
+      const { name, description, assignee } = body;
       if (!name || !description) {
         error(res, "name 和 description 必填");
         return true;
       }
-      addTask(todoPath(root), name, description);
+      addTask(todoPath(root), name, description, assignee);
       json(res, { ok: true }, 201);
       return true;
     }
@@ -279,6 +280,52 @@ export async function handleRequest(
       }
 
       json(res, { memories });
+      return true;
+    }
+
+    // GET /api/employees
+    if (method === "GET" && pathname === "/api/employees") {
+      const employees = loadEmployees(root);
+      json(res, employees);
+      return true;
+    }
+
+    // POST /api/employees
+    if (method === "POST" && pathname === "/api/employees") {
+      const body = JSON.parse(await readBody(req));
+      const { id, name, role, description, systemPrompt } = body;
+      if (!id || !name || !role || !description) {
+        error(res, "id, name, role, description 必填");
+        return true;
+      }
+      saveEmployee(root, { id, name, role, description, systemPrompt });
+      json(res, { ok: true }, 201);
+      return true;
+    }
+
+    // DELETE /api/employees/:id
+    const employeeDeleteMatch = pathname.match(/^\/api\/employees\/([^/]+)$/);
+    if (method === "DELETE" && employeeDeleteMatch) {
+      const id = decodeURIComponent(employeeDeleteMatch[1]);
+      const removed = deleteEmployee(root, id);
+      if (!removed) {
+        error(res, `员工 "${id}" 未找到`, 404);
+        return true;
+      }
+      json(res, { ok: true });
+      return true;
+    }
+
+    // POST /api/employees/auto-assign — suggest employee for a task description
+    if (method === "POST" && pathname === "/api/employees/auto-assign") {
+      const body = JSON.parse(await readBody(req));
+      const { description } = body;
+      if (!description) {
+        error(res, "description 必填");
+        return true;
+      }
+      const employee = autoAssign(root, description);
+      json(res, { employee: employee ?? null });
       return true;
     }
 

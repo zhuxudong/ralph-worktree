@@ -52,6 +52,10 @@ export function TaskCard({
         <span className={styles.statusIndicator} style={{ background: color }} />
         <span className={styles.name}>{task.name}</span>
 
+        {task.assignee && (
+          <span className={styles.assigneeBadge}>@{task.assignee}</span>
+        )}
+
         {task.status === "running" && (
           <span className={styles.badge} style={{ color: "#58a6ff" }}>
             {loops}/20

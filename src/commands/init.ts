@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { rwDir, specsDir, worktreesDir, logsDir, memoryDir } from "../core/config.js";
+import { rwDir, specsDir, worktreesDir, logsDir, memoryDir, employeesPath } from "../core/config.js";
 import { gitRootDir, addToGitExclude } from "../utils/git.js";
 import { logger } from "../utils/logger.js";
 import PROJECT_CLAUDE_MD from "../prompts/project-claude.md";
@@ -52,6 +52,8 @@ export async function initCommand() {
     path.join(rw, "state.json"),
     JSON.stringify({ startedAt: null, tasks: [] }, null, 2)
   );
+
+  fs.writeFileSync(employeesPath(root), JSON.stringify([], null, 2));
 
   await addToGitExclude(root, ".rw/");
 

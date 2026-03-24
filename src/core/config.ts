@@ -39,6 +39,10 @@ export function statePath(root: string): string {
   return path.join(root, RW_DIR, "state.json");
 }
 
+export function employeesPath(root: string): string {
+  return path.join(root, RW_DIR, "employees.json");
+}
+
 export function readPrompt(root: string): string {
   const p = promptPath(root);
   return fs.existsSync(p) ? fs.readFileSync(p, "utf-8") : "";

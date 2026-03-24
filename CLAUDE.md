@@ -1,66 +1,53 @@
-# CLAUDE.md
+## System Instructions (ralph-worktree internal)
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+你是一个由 ralph-worktree 调度的自治 agent，在独立的 git worktree 中执行任务。
 
-## Project
+### Git 行为
+- 你的代码变更会被自动 commit 到本地的 `rw/<task-name>` 分支
+- 不会自动 push 到远程，所有工作都在本地完成
+- 不需要关心远程分支、PR 或 push 操作
 
-ralph-worktree (`rw`) is a CLI that orchestrates parallel autonomous development tasks using git worktrees and Claude Code. Each task runs in an isolated worktree with its own Claude agent loop, all tasks execute in parallel via `Promise.all`.
+### Task Spec（任务详细需求）
+- 如果下方存在 "Task Spec" 部分，说明用户为当前任务提供了详细的需求描述
+- 请严格按照 spec 中的要求执行，spec 的优先级高于 TODO.md 中的简要描述
 
-## Commands
+### Memory（已完成任务的上下文）
+- 如果下方存在 "Completed Tasks" 部分，说明之前有其他 agent 完成了任务
+- 当你的任务与之前的任务有关联时（如依赖其产出、修改相同模块），请关注这些上下文
+- 如果你的任务是独立的，可以忽略
 
-```bash
-npm run build        # Build with tsup → dist/cli.js
-npm run dev          # Build in watch mode
-npm test             # Run all tests (vitest)
-npm run test:watch   # Run tests in watch mode
-npm run lint         # Type-check with tsc --noEmit
-npx vitest run tests/todo-parser.test.ts  # Run a single test file
-npm link             # Install `rw` command globally (after build)
-```
-
-## Architecture
-
-**Execution flow:** `rw run` → parse `.rw/TODO.md` → build agent prompts from `PROMPT.md + RULES.md + specs/ + memory/` → scheduler dispatches all tasks in parallel → each task gets an isolated worktree → agent loop calls `claude --print` iteratively → circuit breaker prevents infinite loops → completed task summaries written to `.rw/memory/<task>.md` → results written to `.rw/state.json`.
-
-**Key layers:**
-
-- **Commands** (`src/commands/`) — CLI handlers registered via Commander.js. Each file is one subcommand (`init`, `run`, `list`, `add`, `remove`, `merge`, `web`).
-- **Core** (`src/core/`) — Business logic:
-  - `scheduler.ts` — Parallel task orchestration (all tasks run concurrently via Promise.all)
-  - `agent-loop.ts` — Iterative Claude CLI invocation loop (max 20 iterations), commits on diff, parses status blocks
-  - `worktree.ts` — Git worktree provisioning/cleanup per task
-  - `todo-parser.ts` — Parses/writes `.rw/TODO.md` with status markers: `[ ]` pending, `[~]` running, `[x]` done, `[!]` failed, `[-]` deleted (soft delete)
-  - `circuit-breaker.ts` — Stops agents after 3 no-progress loops or 5 identical errors
-  - `exit-detector.ts` — Regex parser for `---RW_STATUS---` blocks in agent output (STATUS, EXIT_SIGNAL, SUMMARY)
-  - `state.ts` — JSON persistence in `.rw/state.json`
-  - `config.ts` — `.rw/` path constants and file readers
-- **Utils** (`src/utils/`) — `git.ts` wraps git CLI via execa; `logger.ts` provides color-coded + file logging
-
-**Agent communication protocol:** Agents emit structured status blocks that `exit-detector.ts` parses:
+### 任务完成协议
+每次完成工作后，必须在回复末尾输出状态块：
 ```
 ---RW_STATUS---
 STATUS: IN_PROGRESS | COMPLETE | BLOCKED
 EXIT_SIGNAL: true | false
-SUMMARY: one-line summary
+SUMMARY: <一句话总结你做了什么，写清楚改了哪些文件>
 ---END_RW_STATUS---
 ```
+- EXIT_SIGNAL: true 表示任务已全部完成
+- STATUS: BLOCKED 表示遇到无法解决的问题
 
-## Tech Stack
+## Project Goal & Principles
+# 项目目标
 
-TypeScript (strict, ES2022/ESNext), tsup for bundling, vitest for testing, Commander.js for CLI, execa for subprocesses, chalk for terminal output.
+在这里描述你的项目做什么、技术栈、架构等。每个 agent 启动时都会读取此文件作为上下文。
 
-## `.rw/` Directory (User Projects)
+# 原则
 
-Created by `rw init` in target repos. Contains `PROMPT.md` (with workflow instructions), `TODO.md`, `RULES.md`, `specs/`, `memory/` (auto-generated task summaries), `worktrees/`, `logs/`, `state.json`. Templates are embedded inline in `src/commands/init.ts`.
+- 原则 1
+- 原则 2
 
-**Memory mechanism:** When a task completes successfully, its SUMMARY is written to `.rw/memory/<task-name>.md`. When building prompts for subsequent tasks, all memory files are injected as "Completed Tasks" context. This allows later tasks to be aware of what earlier tasks accomplished, without requiring all tasks to share context at runtime.
 
-## Installed Skills (`.claude/skills/`)
+## Rules (MUST follow)
+# Rules
 
-Project-level skills from [skills.sh](https://skills.sh) are installed in `.claude/skills/`. Claude Code automatically loads these when working in this repo or any worktree.
+在这里添加经验规则，每个 agent 执行前都会读取。用来避免重蹈覆辙。
 
-- **vercel-react-best-practices** — React performance patterns and best practices from Vercel (re-render optimization, bundle splitting, async patterns, server components, etc.)
-- **frontend-ui-ux-engineer** — Frontend UI/UX design expertise (layout, typography, color, responsive design, accessibility)
-- **frontend-design** — Frontend design patterns and implementation guidance
+示例：
+- 修改 converter 后必须跑 pytest
+- 不要修改 shared/types/ 下的文件，那是自动生成的
 
-These skills enhance agent capabilities when working on web frontend tasks (e.g., the `src/web/` dashboard). Agents automatically benefit from these skills without any extra configuration.
+
+## Current Task
+**digital-employee**: 添加数字员工功能，支持新建任务时自动/手动指派相应职能的员工运行任务

@@ -127,14 +127,15 @@ rw init
 生成结构：
 ```
 .rw/
-├── PROMPT.md      # 项目目标与原则
-├── TODO.md        # 任务列表
-├── RULES.md       # 经验规则
-├── specs/         # 任务详细需求（按需添加，同名文件自动关联任务）
-├── memory/        # 已完成任务的摘要（自动生成，供后续任务感知）
-├── worktrees/     # worktree 工作目录（自动管理）
-├── logs/          # 任务日志（自动生成）
-└── state.json     # 运行状态（自动管理）
+├── PROMPT.md        # 项目目标与原则
+├── TODO.md          # 任务列表
+├── RULES.md         # 经验规则
+├── specs/           # 任务详细需求（按需添加，同名文件自动关联任务）
+├── memory/          # 已完成任务的摘要（自动生成，供后续任务感知）
+├── employees.json   # 数字员工配置（通过 rw employee 管理）
+├── worktrees/       # worktree 工作目录（自动管理）
+├── logs/            # 任务日志（自动生成）
+└── state.json       # 运行状态（自动管理）
 ```
 
 ### `rw run [task]`
@@ -167,11 +168,41 @@ rw ls
 
 ### `rw add`
 
-添加任务到 `TODO.md`。
+添加任务到 `TODO.md`。支持手动指派或自动匹配数字员工。
 
 ```bash
+# 基本用法
 rw add "fix-camera-fov: 修复透视相机 FOV 转换"
+
+# 手动指派数字员工
+rw add "fix-camera-fov: 修复透视相机 FOV 转换" --assignee frontend-dev
+
+# 禁用自动指派
+rw add "fix-camera-fov: 修复透视相机 FOV 转换" --no-auto-assign
 ```
+
+### `rw employee`
+
+管理数字员工。每位员工有独立的角色和技能描述，新建任务时可自动匹配或手动指派。被指派的员工信息会作为 persona 注入到 agent 上下文中。
+
+```bash
+# 查看所有数字员工
+rw employee list
+rw employee ls
+
+# 添加数字员工
+rw employee add frontend-dev \
+  --name "小前" \
+  --role "frontend" \
+  --desc "擅长 React/Vue 前端开发，UI 组件实现" \
+  --prompt "你是一个前端专家，优先使用 React 最佳实践"
+
+# 删除数字员工
+rw employee remove frontend-dev
+rw employee rm frontend-dev
+```
+
+员工数据存储在 `.rw/employees.json`。
 
 ### `rw remove`
 
@@ -218,6 +249,7 @@ rw web --tunnel --tunnel-host user@server.com --tunnel-auth mypassword
 - 任务卡片支持折叠/展开，运行中任务自动展开显示实时日志
 - 右键上下文菜单，根据任务状态动态显示可用操作（运行、删除、合并、重试、查看日志/Diff/Memory）
 - 智能添加任务：支持自然语言输入，后端调用 Claude 自动提取任务名和描述（也支持 `task-name: 描述` 快捷格式）
+- 数字员工管理：添加/删除员工，新建任务时支持自动匹配和手动指派
 - SSE 实时推送任务状态变更和日志流
 - Diff 查看器：查看任务分支相对基准的代码变更
 - Memory 查看器：查看任务的上下文记忆
@@ -238,6 +270,10 @@ GET    /api/state           — 运行状态
 GET    /api/logs/:name     — 任务日志
 GET    /api/diff/:name     — 任务分支 diff
 GET    /api/memory/:name   — 任务 memory
+GET    /api/employees      — 员工列表
+POST   /api/employees      — 添加员工
+DELETE /api/employees/:id  — 删除员工
+POST   /api/employees/auto-assign — 自动匹配员工
 GET    /api/events         — SSE 事件流
 GET    /api/logs/:name/stream — SSE 日志流
 ```
@@ -275,6 +311,23 @@ rw run
   ├── 任务完成 → 写入 .rw/memory/<task-name>.md（供后续任务感知）
   ├── 更新 TODO.md 状态标记
   └── 写入 .rw/logs/ 和 .rw/state.json
+```
+
+### 数字员工
+
+数字员工是具备特定职能的虚拟角色，用于为不同类型的任务提供专业化的 agent 上下文。
+
+**工作流程**：
+1. 通过 `rw employee add` 或 Web UI 创建员工，定义其角色、描述和可选的系统提示词
+2. 使用 `rw add` 添加任务时，系统自动根据任务描述匹配最合适的员工（基于关键词匹配）
+3. 也可通过 `--assignee <id>` 手动指派，或 `--no-auto-assign` 禁用自动匹配
+4. 任务执行时，被指派员工的 persona（角色+描述+系统提示词）会注入到 CLAUDE.md 的 agent 上下文中
+
+**自动匹配算法**：将任务描述与每位员工的 role、id 和 description 关键词进行匹配，选择得分最高的员工。
+
+**TODO.md 中的表示**：指派信息以 `@employee-id` 的形式追加在任务描述末尾。
+```markdown
+- [ ] fix-ui-bug: 修复按钮样式问题 @frontend-dev
 ```
 
 ### 熔断机制

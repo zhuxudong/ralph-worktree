@@ -1,11 +1,12 @@
 import type { Task, RunState } from "../types";
+import type { LogPreviewMap } from "../hooks/useEvents";
 import { TaskCard } from "./TaskCard";
 import styles from "./TaskBoard.module.less";
 
 interface TaskBoardProps {
   tasks: Task[];
   state: RunState | null;
-  onAction: () => void;
+  logPreviews?: LogPreviewMap;
 }
 
 const COLUMNS: { key: Task["status"]; label: string }[] = [
@@ -15,7 +16,7 @@ const COLUMNS: { key: Task["status"]; label: string }[] = [
   { key: "failed", label: "失败" },
 ];
 
-export function TaskBoard({ tasks, state, onAction }: TaskBoardProps) {
+export function TaskBoard({ tasks, state, logPreviews = {} }: TaskBoardProps) {
   const grouped = {
     pending: tasks.filter((t) => t.status === "pending"),
     running: tasks.filter((t) => t.status === "running"),
@@ -40,7 +41,7 @@ export function TaskBoard({ tasks, state, onAction }: TaskBoardProps) {
                 key={task.name}
                 task={task}
                 taskState={getTaskState(task.name)}
-                onAction={onAction}
+                latestLog={logPreviews[task.name]}
               />
             ))}
           </div>

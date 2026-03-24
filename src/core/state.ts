@@ -8,6 +8,7 @@ export interface TaskState {
   branch: string;
   worktreePath: string;
   loops: number;
+  maxLoops?: number;
   startedAt?: string;
   finishedAt?: string;
   mergedAt?: string;

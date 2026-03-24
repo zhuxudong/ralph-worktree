@@ -105,6 +105,9 @@ export async function runScheduler(
         taskName: task.name,
         maxLoops: opts.maxLoops,
         timeoutMs: opts.timeoutMs,
+        onProgress: (loop) => {
+          updateTaskState(opts.root, task.name, { loops: loop });
+        },
       });
 
       // Update status

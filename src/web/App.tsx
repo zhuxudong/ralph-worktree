@@ -7,7 +7,7 @@ import { runAll, mergeAll } from "./hooks/useApi";
 import styles from "./App.module.less";
 
 export function App() {
-  const { tasks, state, connected } = useEvents();
+  const { tasks, state, connected, logPreviews } = useEvents();
   const [acting, setActing] = useState(false);
 
   const handleAction = async (action: () => Promise<void>) => {
@@ -45,7 +45,7 @@ export function App() {
         </div>
       </header>
 
-      <TaskBoard tasks={tasks} state={state} />
+      <TaskBoard tasks={tasks} state={state} logPreviews={logPreviews} />
 
       <AddTask />
 

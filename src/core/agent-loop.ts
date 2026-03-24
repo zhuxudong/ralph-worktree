@@ -10,6 +10,8 @@ export interface AgentLoopOptions {
   maxLoops: number;
   timeoutMs: number;
   allowedTools?: string[];
+  /** Called at the start of each loop iteration with current loop index (0-based). */
+  onProgress?: (loop: number, maxLoops: number) => void;
 }
 
 export interface AgentLoopResult {
@@ -34,6 +36,7 @@ export async function runAgentLoop(
     }
 
     logger.task(opts.taskName, `循环 ${i + 1}/${opts.maxLoops}`);
+    opts.onProgress?.(i + 1, opts.maxLoops);
 
     try {
       const response = await callClaude(opts);

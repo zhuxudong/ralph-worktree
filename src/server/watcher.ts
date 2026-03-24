@@ -113,6 +113,12 @@ export class Watcher {
       try {
         const state: RunState = JSON.parse(raw);
         this.emit({ type: "state", data: state });
+        // Auto-watch logs for running tasks
+        for (const t of state.tasks) {
+          if (t.status === "running" && !this.logOffsets.has(t.name)) {
+            this.watchLog(t.name);
+          }
+        }
       } catch {
         // ignore parse errors from partial writes
       }

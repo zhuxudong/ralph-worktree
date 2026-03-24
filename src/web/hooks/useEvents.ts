@@ -23,10 +23,14 @@ interface RunState {
   tasks: TaskState[];
 }
 
+/** Map of taskName → last log line (for preview in task cards). */
+export type LogPreviewMap = Record<string, string>;
+
 interface UseEventsReturn {
   tasks: Task[];
   state: RunState | null;
   connected: boolean;
+  logPreviews: LogPreviewMap;
 }
 
 /**
@@ -38,6 +42,7 @@ export function useEvents(): UseEventsReturn {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [state, setState] = useState<RunState | null>(null);
   const [connected, setConnected] = useState(false);
+  const [logPreviews, setLogPreviews] = useState<LogPreviewMap>({});
 
   useEffect(() => {
     const es = new EventSource("/api/events");
@@ -61,13 +66,25 @@ export function useEvents(): UseEventsReturn {
       }
     });
 
+    es.addEventListener("log", (e) => {
+      try {
+        const data = JSON.parse(e.data) as { taskName: string; lines: string[] };
+        if (data.lines.length > 0) {
+          const lastLine = data.lines[data.lines.length - 1];
+          setLogPreviews((prev) => ({ ...prev, [data.taskName]: lastLine }));
+        }
+      } catch {
+        // ignore
+      }
+    });
+
     return () => {
       es.close();
       setConnected(false);
     };
   }, []);
 
-  return { tasks, state, connected };
+  return { tasks, state, connected, logPreviews };
 }
 
 interface UseLogStreamReturn {

@@ -2,6 +2,8 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { handleRequest } from "./routes.js";
+import { handleEvents, handleLogStream } from "./sse.js";
+import { Watcher } from "./watcher.js";
 import { logger } from "../utils/logger.js";
 
 const MIME_TYPES: Record<string, string> = {
@@ -50,19 +52,38 @@ function serveStatic(
 
 export interface ServerOptions {
   port: number;
+  root: string;
 }
 
 export function startServer(opts: ServerOptions): http.Server {
-  const { port } = opts;
+  const { port, root } = opts;
   const staticDir = path.join(
     path.dirname(new URL(import.meta.url).pathname),
     "web"
   );
 
+  const watcher = new Watcher(root);
+  watcher.start(2000);
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+    const pathname = url.pathname;
 
-    // Try API routes first
+    // SSE endpoints
+    if (req.method === "GET" && pathname === "/api/events") {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      handleEvents(req, res, watcher);
+      return;
+    }
+
+    const logStreamMatch = pathname.match(/^\/api\/logs\/([^/]+)\/stream$/);
+    if (req.method === "GET" && logStreamMatch) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      handleLogStream(req, res, watcher, decodeURIComponent(logStreamMatch[1]));
+      return;
+    }
+
+    // Try API routes
     const handled = await handleRequest(req, res);
     if (handled) return;
 

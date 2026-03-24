@@ -6,7 +6,6 @@ import { loadState } from "../core/state.js";
 import { gitRootDir, gitCurrentBranch } from "../utils/git.js";
 import { runScheduler } from "../core/scheduler.js";
 import { saveState, type RunState } from "../core/state.js";
-import { cleanupAll } from "../core/worktree.js";
 import { logger } from "../utils/logger.js";
 import path from "node:path";
 
@@ -60,7 +59,7 @@ export async function handleRequest(
     // GET /api/tasks
     if (method === "GET" && pathname === "/api/tasks") {
       const content = fs.readFileSync(todoPath(root), "utf-8");
-      const tasks = parseTodo(content);
+      const tasks = parseTodo(content).filter((t) => t.status !== "deleted");
       json(res, tasks);
       return true;
     }
@@ -78,22 +77,11 @@ export async function handleRequest(
       return true;
     }
 
-    // DELETE /api/tasks/:name
+    // DELETE /api/tasks/:name (soft delete)
     const deleteMatch = pathname.match(/^\/api\/tasks\/([^/]+)$/);
     if (method === "DELETE" && deleteMatch) {
       const name = decodeURIComponent(deleteMatch[1]);
       removeTask(todoPath(root), name);
-      // Also try to clean up worktree (same as removeCommand)
-      try {
-        const { cleanup } = await import("../core/worktree.js");
-        await cleanup(root, name);
-      } catch {
-        // worktree may not exist
-      }
-      // Clean up memory
-      const { memoryDir } = await import("../core/config.js");
-      const memFile = path.join(memoryDir(root), `${name}.md`);
-      if (fs.existsSync(memFile)) fs.unlinkSync(memFile);
       json(res, { ok: true });
       return true;
     }
@@ -160,24 +148,6 @@ export async function handleRequest(
       // mergeCommand calls process.exit on errors, so we run it best-effort
       json(res, { message: "正在合并已完成分支" });
       mergeCommand({}).catch((err) => logger.error(`合并错误: ${err.message}`));
-      return true;
-    }
-
-    // POST /api/clean
-    if (method === "POST" && pathname === "/api/clean") {
-      const cleaned = await cleanupAll(root);
-      // Clean memory (same as cleanCommand)
-      const { memoryDir } = await import("../core/config.js");
-      const mDir = memoryDir(root);
-      let memoryCount = 0;
-      if (fs.existsSync(mDir)) {
-        const files = fs.readdirSync(mDir).filter((f) => f.endsWith(".md"));
-        for (const f of files) {
-          fs.unlinkSync(path.join(mDir, f));
-        }
-        memoryCount = files.length;
-      }
-      json(res, { cleaned, memoryCleared: memoryCount });
       return true;
     }
 

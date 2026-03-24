@@ -2,7 +2,7 @@ import { useState } from "react";
 import { TaskBoard } from "./components/TaskBoard";
 import { AddTask } from "./components/AddTask";
 import { StatusBar } from "./components/StatusBar";
-import { useTasks, useRunState, runAll, mergeAll, cleanAll } from "./hooks/useApi";
+import { useTasks, useRunState, runAll, mergeAll } from "./hooks/useApi";
 import styles from "./App.module.less";
 
 export function App() {
@@ -41,13 +41,6 @@ export function App() {
             disabled={acting}
           >
             运行全部
-          </button>
-          <button
-            className={styles.btn}
-            onClick={() => handleAction(cleanAll)}
-            disabled={acting}
-          >
-            清理
           </button>
           <button
             className={styles.btn}

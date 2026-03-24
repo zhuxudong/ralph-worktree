@@ -10,10 +10,11 @@ describe("parseTodo", () => {
 - [x] fix-shadow: Fix shadow mapping
 - [!] broken-task: This task failed
 - [✓] merged-task: This task was merged
+- [-] removed-task: This task was soft deleted
 `;
 
     const tasks = parseTodo(content);
-    expect(tasks).toHaveLength(5);
+    expect(tasks).toHaveLength(6);
 
     expect(tasks[0]).toEqual({
       name: "fix-camera",
@@ -39,6 +40,11 @@ describe("parseTodo", () => {
       name: "merged-task",
       description: "This task was merged",
       status: "merged",
+    });
+    expect(tasks[5]).toEqual({
+      name: "removed-task",
+      description: "This task was soft deleted",
+      status: "deleted",
     });
   });
 

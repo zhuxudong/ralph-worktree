@@ -24,12 +24,12 @@ npm link             # Install `rw` command globally (after build)
 
 **Key layers:**
 
-- **Commands** (`src/commands/`) — CLI handlers registered via Commander.js. Each file is one subcommand (`init`, `run`, `list`, `add`, `remove`, `clean`, `merge`).
+- **Commands** (`src/commands/`) — CLI handlers registered via Commander.js. Each file is one subcommand (`init`, `run`, `list`, `add`, `remove`, `merge`, `web`).
 - **Core** (`src/core/`) — Business logic:
   - `scheduler.ts` — Parallel task orchestration (all tasks run concurrently via Promise.all)
   - `agent-loop.ts` — Iterative Claude CLI invocation loop (max 20 iterations), commits on diff, parses status blocks
   - `worktree.ts` — Git worktree provisioning/cleanup per task
-  - `todo-parser.ts` — Parses/writes `.rw/TODO.md` with status markers: `[ ]` pending, `[~]` running, `[x]` done, `[!]` failed
+  - `todo-parser.ts` — Parses/writes `.rw/TODO.md` with status markers: `[ ]` pending, `[~]` running, `[x]` done, `[!]` failed, `[-]` deleted (soft delete)
   - `circuit-breaker.ts` — Stops agents after 3 no-progress loops or 5 identical errors
   - `exit-detector.ts` — Regex parser for `---RW_STATUS---` blocks in agent output (STATUS, EXIT_SIGNAL, SUMMARY)
   - `state.ts` — JSON persistence in `.rw/state.json`

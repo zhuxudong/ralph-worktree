@@ -12,6 +12,7 @@ const STATUS_DISPLAY: Record<Task["status"], string> = {
   done: chalk.green("[x] done"),
   merged: chalk.blue("[✓] merged"),
   failed: chalk.red("[!] failed"),
+  deleted: chalk.strikethrough.dim("[-] deleted"),
 };
 
 export async function listCommand() {
@@ -41,21 +42,23 @@ export async function listCommand() {
     wordWrap: true,
   });
 
-  for (const task of tasks) {
+  const visibleTasks = tasks.filter((t) => t.status !== "deleted");
+
+  for (const task of visibleTasks) {
     table.push([task.name, STATUS_DISPLAY[task.status], task.description]);
   }
 
   console.log(table.toString());
 
   const counts = {
-    pending: tasks.filter((t) => t.status === "pending").length,
-    running: tasks.filter((t) => t.status === "running").length,
-    done: tasks.filter((t) => t.status === "done").length,
-    merged: tasks.filter((t) => t.status === "merged").length,
-    failed: tasks.filter((t) => t.status === "failed").length,
+    pending: visibleTasks.filter((t) => t.status === "pending").length,
+    running: visibleTasks.filter((t) => t.status === "running").length,
+    done: visibleTasks.filter((t) => t.status === "done").length,
+    merged: visibleTasks.filter((t) => t.status === "merged").length,
+    failed: visibleTasks.filter((t) => t.status === "failed").length,
   };
 
   logger.info(
-    `总计: ${tasks.length} | 待做: ${counts.pending} | 进行中: ${counts.running} | 完成: ${counts.done} | 已合并: ${counts.merged} | 失败: ${counts.failed}`
+    `总计: ${visibleTasks.length} | 待做: ${counts.pending} | 进行中: ${counts.running} | 完成: ${counts.done} | 已合并: ${counts.merged} | 失败: ${counts.failed}`
   );
 }

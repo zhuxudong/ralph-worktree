@@ -81,6 +81,3 @@ export async function mergeAll(): Promise<void> {
   await request("/merge", { method: "POST" });
 }
 
-export async function cleanAll(): Promise<void> {
-  await request("/clean", { method: "POST" });
-}

@@ -4,7 +4,7 @@ import { runCommand } from "./commands/run.js";
 import { listCommand } from "./commands/list.js";
 import { addCommand } from "./commands/add.js";
 import { removeCommand } from "./commands/remove.js";
-import { cleanCommand } from "./commands/clean.js";
+
 import { mergeCommand } from "./commands/merge.js";
 import { webCommand } from "./commands/web.js";
 
@@ -50,13 +50,8 @@ program
 program
   .command("remove <name>")
   .alias("rm")
-  .description("从 TODO.md 移除任务")
+  .description("软删除任务（标记为 [-]）")
   .action(removeCommand);
-
-program
-  .command("clean")
-  .description("清理所有 worktree 及其分支")
-  .action(cleanCommand);
 
 program
   .command("merge")

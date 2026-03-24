@@ -53,6 +53,7 @@ function serveStatic(
 
 export interface ServerOptions {
   port: number;
+  root?: string;
 }
 
 export function startServer(opts: ServerOptions): http.Server {

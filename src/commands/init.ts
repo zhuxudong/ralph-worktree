@@ -3,6 +3,7 @@ import path from "node:path";
 import { rwDir, specsDir, worktreesDir, logsDir, memoryDir } from "../core/config.js";
 import { gitRootDir, addToGitExclude } from "../utils/git.js";
 import { logger } from "../utils/logger.js";
+import PROJECT_CLAUDE_MD from "../prompts/project-claude.md";
 
 const TEMPLATES: Record<string, string> = {
   "PROMPT.md": `# 项目目标
@@ -53,6 +54,19 @@ export async function initCommand() {
   );
 
   await addToGitExclude(root, ".rw/");
+
+  // Generate CLAUDE.md at project root (append if exists, create if not)
+  const claudeMdPath = path.join(root, "CLAUDE.md");
+  if (fs.existsSync(claudeMdPath)) {
+    const existing = fs.readFileSync(claudeMdPath, "utf-8");
+    if (!existing.includes("多任务并发机制 (.rw/)")) {
+      fs.appendFileSync(claudeMdPath, "\n" + PROJECT_CLAUDE_MD);
+      logger.success("已在 CLAUDE.md 中追加 rw 工作流说明");
+    }
+  } else {
+    fs.writeFileSync(claudeMdPath, PROJECT_CLAUDE_MD);
+    logger.success("已生成 CLAUDE.md");
+  }
 
   logger.success("已初始化 .rw/ 目录");
   logger.info("编辑以下文件开始使用：");

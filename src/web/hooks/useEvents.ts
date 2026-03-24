@@ -12,6 +12,7 @@ interface TaskState {
   branch: string;
   worktreePath: string;
   loops: number;
+  maxLoops?: number;
   startedAt?: string;
   finishedAt?: string;
   summary?: string;

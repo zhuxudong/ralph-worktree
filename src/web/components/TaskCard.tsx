@@ -68,7 +68,7 @@ export function TaskCard({ task, taskState, latestLog }: TaskCardProps) {
 
         {task.status === "running" && (
           <div className={styles.runningInfo}>
-            <div className={styles.progress}>循环 {loops}/20</div>
+            <div className={styles.progress}>循环 {loops}/{taskState?.maxLoops ?? 20}</div>
             {latestLog && (
               <div className={styles.logPreview} title={latestLog}>
                 {latestLog}

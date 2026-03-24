@@ -70,6 +70,7 @@ export async function runScheduler(
       updateTaskState(opts.root, task.name, {
         status: "running",
         branch: `rw/${task.name}`,
+        maxLoops: opts.maxLoops,
         startedAt: new Date().toISOString(),
       });
 

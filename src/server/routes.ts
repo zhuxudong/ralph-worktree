@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import http from "node:http";
-import { todoPath, logsDir, ensureRwDir } from "../core/config.js";
-import { parseTodo, addTask, removeTask } from "../core/todo-parser.js";
+import path from "node:path";
+import { todoPath, logsDir, memoryDir, worktreesDir, ensureRwDir } from "../core/config.js";
+import { parseTodo, addTask, removeTask, updateTaskStatus } from "../core/todo-parser.js";
 import { loadState } from "../core/state.js";
 import { gitRootDir, gitCurrentBranch } from "../utils/git.js";
 import { runScheduler } from "../core/scheduler.js";
 import { saveState, type RunState } from "../core/state.js";
 import { logger } from "../utils/logger.js";
-import path from "node:path";
 
 function json(res: http.ServerResponse, data: unknown, status = 200) {
   res.writeHead(status, { "Content-Type": "application/json" });
@@ -74,6 +74,74 @@ export async function handleRequest(
       }
       addTask(todoPath(root), name, description);
       json(res, { ok: true }, 201);
+      return true;
+    }
+
+    // POST /api/tasks/smart — AI parse natural language into task
+    if (method === "POST" && pathname === "/api/tasks/smart") {
+      const body = JSON.parse(await readBody(req));
+      const { input } = body;
+      if (!input || typeof input !== "string" || !input.trim()) {
+        error(res, "input 必填");
+        return true;
+      }
+      // Try manual format first: task-name: description
+      const colonIdx = input.indexOf(":");
+      if (colonIdx > 0) {
+        const namePart = input.slice(0, colonIdx).trim();
+        // If it looks like a valid task name (no spaces, kebab-case)
+        if (/^[a-z0-9][a-z0-9-]*$/.test(namePart)) {
+          const desc = input.slice(colonIdx + 1).trim();
+          if (desc) {
+            json(res, { name: namePart, description: desc });
+            return true;
+          }
+        }
+      }
+      // AI parsing: use claude to extract task name and description
+      try {
+        const result = await parseTaskWithAI(input);
+        json(res, result);
+      } catch (err: any) {
+        error(res, `AI 解析失败: ${err.message}`, 500);
+      }
+      return true;
+    }
+
+    // POST /api/tasks/:name/retry — reset failed task to pending and re-run
+    const retryMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/retry$/);
+    if (method === "POST" && retryMatch) {
+      const taskName = decodeURIComponent(retryMatch[1]);
+      const content = fs.readFileSync(todoPath(root), "utf-8");
+      const tasks = parseTodo(content);
+      const task = tasks.find((t) => t.name === taskName);
+      if (!task) {
+        error(res, `任务 "${taskName}" 未找到`, 404);
+        return true;
+      }
+      if (task.status !== "failed") {
+        error(res, `任务 "${taskName}" 状态为 ${task.status}，只有失败任务可以重试`);
+        return true;
+      }
+      // Reset to pending
+      updateTaskStatus(todoPath(root), taskName, "pending");
+      // Run it
+      const base = await gitCurrentBranch();
+      const logDir = logsDir(root);
+      logger.setTask(logDir, "scheduler");
+      const runState: RunState = {
+        startedAt: new Date().toISOString(),
+        tasks: [],
+      };
+      saveState(root, runState);
+      json(res, { message: `正在重试任务: ${taskName}` });
+      runScheduler({
+        root,
+        tasks: [{ ...task, status: "pending" }],
+        base,
+        maxLoops: 20,
+        timeoutMs: 15 * 60 * 1000,
+      }).catch((err) => logger.error(`调度器错误: ${err.message}`));
       return true;
     }
 
@@ -145,7 +213,6 @@ export async function handleRequest(
     // POST /api/merge
     if (method === "POST" && pathname === "/api/merge") {
       const { mergeCommand } = await import("../commands/merge.js");
-      // mergeCommand calls process.exit on errors, so we run it best-effort
       json(res, { message: "正在合并已完成分支" });
       mergeCommand({}).catch((err) => logger.error(`合并错误: ${err.message}`));
       return true;
@@ -172,6 +239,49 @@ export async function handleRequest(
       return true;
     }
 
+    // GET /api/diff/:name — git diff for task branch vs base
+    const diffMatch = pathname.match(/^\/api\/diff\/([^/]+)$/);
+    if (method === "GET" && diffMatch) {
+      const taskName = decodeURIComponent(diffMatch[1]);
+      const branch = `rw/${taskName}`;
+      try {
+        const { execaCommand } = await import("execa");
+        const base = await gitCurrentBranch();
+        const result = await execaCommand(`git diff ${base}...${branch}`, { cwd: root });
+        json(res, { diff: result.stdout });
+      } catch (err: any) {
+        error(res, `无法获取 diff: ${err.message}`, 500);
+      }
+      return true;
+    }
+
+    // GET /api/memory/:name — memory content for a task
+    const memoryMatch = pathname.match(/^\/api\/memory\/([^/]+)$/);
+    if (method === "GET" && memoryMatch) {
+      const taskName = decodeURIComponent(memoryMatch[1]);
+      const memDir = memoryDir(root);
+      const taskMemDir = path.join(memDir, taskName);
+      const memories: Record<string, string> = {};
+
+      if (fs.existsSync(taskMemDir) && fs.statSync(taskMemDir).isDirectory()) {
+        for (const file of fs.readdirSync(taskMemDir)) {
+          if (file.endsWith(".md")) {
+            memories[file] = fs.readFileSync(path.join(taskMemDir, file), "utf-8");
+          }
+        }
+      }
+
+      // Also check CLAUDE.md in the worktree for context
+      const wtDir = path.join(worktreesDir(root), taskName);
+      const claudeMd = path.join(wtDir, "CLAUDE.md");
+      if (fs.existsSync(claudeMd)) {
+        memories["CLAUDE.md"] = fs.readFileSync(claudeMd, "utf-8");
+      }
+
+      json(res, { memories });
+      return true;
+    }
+
     // 404 for unmatched /api/ routes
     error(res, "Not found", 404);
     return true;
@@ -179,4 +289,28 @@ export async function handleRequest(
     error(res, err.message ?? "Internal server error", 500);
     return true;
   }
+}
+
+// AI task parsing using claude CLI
+async function parseTaskWithAI(input: string): Promise<{ name: string; description: string }> {
+  const { execaCommand } = await import("execa");
+  const prompt = `You are a task name generator. Given a natural language description of a task, extract a short kebab-case task name and a concise description. Respond ONLY in JSON format: {"name": "task-name", "description": "description text"}. No other text.
+
+User input: ${input}`;
+
+  const result = await execaCommand(`claude -p "${prompt.replace(/"/g, '\\"')}"`, {
+    timeout: 30_000,
+  });
+
+  const output = result.stdout.trim();
+  // Extract JSON from the output
+  const jsonMatch = output.match(/\{[^}]+\}/);
+  if (!jsonMatch) {
+    throw new Error("AI 返回格式错误");
+  }
+  const parsed = JSON.parse(jsonMatch[0]);
+  if (!parsed.name || !parsed.description) {
+    throw new Error("AI 返回缺少 name 或 description");
+  }
+  return { name: parsed.name, description: parsed.description };
 }

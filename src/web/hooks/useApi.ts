@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Task, RunState } from "../types";
+import type { Task, RunState, SmartTaskResult } from "../types";
 
 const API_BASE = "/api";
 
@@ -34,7 +34,7 @@ export function useTasks() {
     refresh();
   }, [refresh]);
 
-  return { tasks, loading, refresh };
+  return { tasks, setTasks, loading, refresh };
 }
 
 export function useRunState() {
@@ -53,7 +53,7 @@ export function useRunState() {
     refresh();
   }, [refresh]);
 
-  return { state, refresh };
+  return { state, setState, refresh };
 }
 
 export async function addTask(name: string, description: string): Promise<void> {
@@ -81,3 +81,28 @@ export async function mergeAll(): Promise<void> {
   await request("/merge", { method: "POST" });
 }
 
+export async function smartParseTask(input: string): Promise<SmartTaskResult> {
+  return request<SmartTaskResult>("/tasks/smart", {
+    method: "POST",
+    body: JSON.stringify({ input }),
+  });
+}
+
+export async function retryTask(name: string): Promise<void> {
+  await request(`/tasks/${encodeURIComponent(name)}/retry`, { method: "POST" });
+}
+
+export async function getDiff(name: string): Promise<string> {
+  const data = await request<{ diff: string }>(`/diff/${encodeURIComponent(name)}`);
+  return data.diff;
+}
+
+export async function getMemory(name: string): Promise<Record<string, string>> {
+  const data = await request<{ memories: Record<string, string> }>(`/memory/${encodeURIComponent(name)}`);
+  return data.memories;
+}
+
+export async function getLogs(name: string): Promise<string> {
+  const data = await request<{ logs: string }>(`/logs/${encodeURIComponent(name)}`);
+  return data.logs;
+}

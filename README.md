@@ -214,11 +214,33 @@ rw web --tunnel --tunnel-host user@server.com --tunnel-auth mypassword
 ```
 
 功能：
-- 四列看板（待做 / 进行中 / 已完成 / 失败），支持任务增删和运行
-- SSE 实时推送任务状态变更、循环进度和日志流
-- 运行中任务实时显示循环计数（如 "循环 3/20"）和最新日志预览
-- 点击运行中/已完成/失败任务可展开完整日志面板（tail -f 效果）
+- 单列分组列表（运行中 → 待做 → 已完成 → 已合并 → 失败），按状态分组可折叠
+- 任务卡片支持折叠/展开，运行中任务自动展开显示实时日志
+- 右键上下文菜单，根据任务状态动态显示可用操作（运行、删除、合并、重试、查看日志/Diff/Memory）
+- 智能添加任务：支持自然语言输入，后端调用 Claude 自动提取任务名和描述（也支持 `task-name: 描述` 快捷格式）
+- SSE 实时推送任务状态变更和日志流
+- Diff 查看器：查看任务分支相对基准的代码变更
+- Memory 查看器：查看任务的上下文记忆
 - SSH 反向隧道支持手机端远程访问
+- 深色主题（GitHub Dark 风格）
+
+API 端点：
+```
+GET    /api/tasks          — 任务列表
+POST   /api/tasks          — 添加任务
+POST   /api/tasks/smart    — AI 解析自然语言为任务
+DELETE /api/tasks/:name    — 删除任务
+POST   /api/tasks/:name/retry — 重试失败任务
+POST   /api/run            — 执行所有待办任务
+POST   /api/run/:name      — 执行指定任务
+POST   /api/merge          — 合并已完成分支
+GET    /api/state           — 运行状态
+GET    /api/logs/:name     — 任务日志
+GET    /api/diff/:name     — 任务分支 diff
+GET    /api/memory/:name   — 任务 memory
+GET    /api/events         — SSE 事件流
+GET    /api/logs/:name/stream — SSE 日志流
+```
 
 开发模式：
 ```bash

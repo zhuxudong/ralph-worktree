@@ -2,6 +2,9 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { handleRequest } from "./routes.js";
+import { Watcher } from "./watcher.js";
+import { handleEvents, handleLogStream } from "./sse.js";
+import { gitRootDir } from "../utils/git.js";
 import { logger } from "../utils/logger.js";
 
 const MIME_TYPES: Record<string, string> = {
@@ -59,10 +62,38 @@ export function startServer(opts: ServerOptions): http.Server {
     "web"
   );
 
+  let watcher: Watcher | null = null;
+
+  // Initialize watcher asynchronously
+  gitRootDir().then((root) => {
+    watcher = new Watcher(root);
+    watcher.start();
+  });
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+    const pathname = url.pathname;
 
-    // Try API routes first
+    // SSE endpoints need the watcher
+    if (watcher) {
+      // GET /api/events
+      if (req.method === "GET" && pathname === "/api/events") {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        handleEvents(req, res, watcher);
+        return;
+      }
+
+      // GET /api/logs/:name/stream
+      const logStreamMatch = pathname.match(/^\/api\/logs\/([^/]+)\/stream$/);
+      if (req.method === "GET" && logStreamMatch) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        const taskName = decodeURIComponent(logStreamMatch[1]);
+        handleLogStream(req, res, watcher, taskName);
+        return;
+      }
+    }
+
+    // Try API routes
     const handled = await handleRequest(req, res);
     if (handled) return;
 
@@ -79,6 +110,11 @@ export function startServer(opts: ServerOptions): http.Server {
       const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
       exec(`${cmd} ${url}`);
     });
+  });
+
+  // Cleanup watcher on server close
+  server.on("close", () => {
+    watcher?.stop();
   });
 
   return server;

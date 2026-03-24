@@ -1,41 +1,72 @@
+@font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+  "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #fff;
-  color: #24292e;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
-    sans-serif;
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: @font-stack;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e1e4e8;
-  background: #fff;
+  padding: 12px 20px;
+  border-bottom: 1px solid #21262d;
+  background: #161b22;
+  flex-shrink: 0;
 }
 
-.title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.toolbar {
+.headerLeft {
   display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #f0f6fc;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3fb950;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.statusSummary {
+  font-size: 13px;
+  color: #8b949e;
+}
+
 .btn,
-.primaryBtn {
-  padding: 6px 14px;
+.primaryBtn,
+.addBtn {
+  padding: 5px 12px;
   border-radius: 6px;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  border: 1px solid #d1d5da;
-  transition: background 0.15s;
+  border: 1px solid #30363d;
+  transition: all 0.15s;
 
   &:disabled {
     opacity: 0.5;
@@ -44,21 +75,32 @@
 }
 
 .btn {
-  background: #fafbfc;
-  color: #24292e;
+  background: #21262d;
+  color: #c9d1d9;
 
   &:hover:not(:disabled) {
-    background: #f3f4f6;
+    background: #30363d;
+    border-color: #8b949e;
   }
 }
 
 .primaryBtn {
-  background: #2ea44f;
+  background: #238636;
   color: #fff;
-  border-color: #2ea44f;
+  border-color: rgba(240, 246, 252, 0.1);
 
   &:hover:not(:disabled) {
-    background: #22863a;
+    background: #2ea043;
+  }
+}
+
+.addBtn {
+  background: transparent;
+  color: #58a6ff;
+  border-color: #58a6ff;
+
+  &:hover {
+    background: rgba(88, 166, 255, 0.1);
   }
 }
 
@@ -67,6 +109,7 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  font-size: 16px;
-  color: #586069;
+  font-size: 14px;
+  color: #8b949e;
+  background: #0d1117;
 }

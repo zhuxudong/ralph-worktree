@@ -103,6 +103,7 @@ export function useLogStream(taskName: string): UseLogStreamReturn {
   const [lines, setLines] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   const esRef = useRef<EventSource | null>(null);
+  const doneRef = useRef(false);
 
   const disconnect = useCallback(() => {
     if (esRef.current) {
@@ -115,6 +116,7 @@ export function useLogStream(taskName: string): UseLogStreamReturn {
     disconnect();
     setLines([]);
     setDone(false);
+    doneRef.current = false;
 
     const es = new EventSource(`/api/logs/${encodeURIComponent(taskName)}/stream`);
     esRef.current = es;
@@ -129,17 +131,18 @@ export function useLogStream(taskName: string): UseLogStreamReturn {
     });
 
     es.addEventListener("done", () => {
+      doneRef.current = true;
       setDone(true);
     });
 
     es.onerror = () => {
       // EventSource will auto-reconnect, but if task is done we close
-      if (done) {
+      if (doneRef.current) {
         es.close();
         esRef.current = null;
       }
     };
-  }, [taskName, disconnect, done]);
+  }, [taskName, disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {

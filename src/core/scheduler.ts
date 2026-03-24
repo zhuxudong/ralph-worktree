@@ -116,6 +116,16 @@ export async function runScheduler(
       const claudeMd = buildPrompt(opts.root, task);
       fs.writeFileSync(path.join(wtPath, "CLAUDE.md"), claudeMd);
 
+      // Exclude CLAUDE.md from git so it won't conflict on merge
+      // Worktree's git dir is under main repo's .git/worktrees/<name>/
+      const excludeDir = path.join(opts.root, ".git", "worktrees", task.name, "info");
+      fs.mkdirSync(excludeDir, { recursive: true });
+      const excludeFile = path.join(excludeDir, "exclude");
+      const excludeContent = fs.existsSync(excludeFile) ? fs.readFileSync(excludeFile, "utf-8") : "";
+      if (!excludeContent.includes("CLAUDE.md")) {
+        fs.appendFileSync(excludeFile, "\nCLAUDE.md\n");
+      }
+
       const result = await runAgentLoop({
         cwd: wtPath,
         taskName: task.name,

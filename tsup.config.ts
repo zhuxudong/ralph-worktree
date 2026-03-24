@@ -13,4 +13,5 @@ export default defineConfig({
   loader: {
     ".md": "text",
   },
+  external: ["vite"],
 });

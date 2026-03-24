@@ -9,6 +9,7 @@ import {
 
 export interface WebOptions {
   port?: number;
+  prod?: boolean;
   tunnel?: boolean;
   tunnelHost?: string;
   tunnelAuth?: string;
@@ -23,7 +24,7 @@ export async function webCommand(opts: WebOptions = {}) {
   }
 
   const port = opts.port ?? 3700;
-  const server = startServer({ port, root });
+  const server = startServer({ port, root, prod: opts.prod });
 
   // Start SSH tunnel if requested
   if (opts.tunnel) {

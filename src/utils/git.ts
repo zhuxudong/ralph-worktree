@@ -86,8 +86,19 @@ export async function gitMerge(
   cwd?: string
 ): Promise<{ success: boolean; conflict?: boolean; error?: string }> {
   try {
+    // Stash any uncommitted changes (e.g. generated CLAUDE.md) before merge
+    const { stdout: status } = await execa("git", ["status", "--porcelain"], { cwd });
+    const needStash = status.trim().length > 0;
+    if (needStash) {
+      await execa("git", ["stash", "push", "-m", "rw-merge-auto-stash"], { cwd });
+    }
+
     await execa("git", ["checkout", into], { cwd });
     await execa("git", ["merge", branch, "--no-ff", "-m", `Merge ${branch} into ${into}`], { cwd });
+
+    if (needStash) {
+      await execa("git", ["stash", "pop"], { cwd }).catch(() => {});
+    }
     return { success: true };
   } catch (err: any) {
     const conflict = err.message?.includes("CONFLICT") || err.message?.includes("fix conflicts");

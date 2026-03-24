@@ -7,6 +7,13 @@ import { handleEvents, handleLogStream } from "./sse.js";
 import { gitRootDir } from "../utils/git.js";
 import { logger } from "../utils/logger.js";
 
+function openBrowser(url: string): void {
+  import("child_process").then(({ exec }) => {
+    const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+    exec(`${cmd} ${url}`);
+  });
+}
+
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -54,6 +61,7 @@ function serveStatic(
 export interface ServerOptions {
   port: number;
   root?: string;
+  prod?: boolean;
 }
 
 export function startServer(opts: ServerOptions): http.Server {
@@ -102,15 +110,36 @@ export function startServer(opts: ServerOptions): http.Server {
     serveStatic(res, staticDir, url.pathname);
   });
 
-  server.listen(port, () => {
-    const url = `http://localhost:${port}`;
-    logger.success(`Web 看板已启动: ${url}`);
-
-    // Auto open browser
-    import("child_process").then(({ exec }) => {
-      const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-      exec(`${cmd} ${url}`);
-    });
+  server.listen(port, async () => {
+    if (!opts.prod) {
+      // Dev mode: start Vite dev server with API proxy
+      try {
+        const { createServer: createViteServer } = await import("vite");
+        const vite = await createViteServer({
+          configFile: path.resolve(process.cwd(), "vite.config.ts"),
+          server: {
+            port: port + 1,
+            open: true,
+            proxy: {
+              "/api": `http://localhost:${port}`,
+            },
+          },
+        });
+        await vite.listen();
+        logger.success(`API server: http://localhost:${port}`);
+        logger.success(`Web 看板 (dev): http://localhost:${port + 1}`);
+      } catch {
+        // Vite not available, fallback to static
+        logger.warn("Vite 不可用，使用静态文件模式");
+        const url = `http://localhost:${port}`;
+        logger.success(`Web 看板: ${url}`);
+        openBrowser(url);
+      }
+    } else {
+      const url = `http://localhost:${port}`;
+      logger.success(`Web 看板 (prod): ${url}`);
+      openBrowser(url);
+    }
   });
 
   // Cleanup watcher on server close

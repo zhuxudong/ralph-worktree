@@ -68,14 +68,16 @@ program
 
 program
   .command("web")
-  .description("启动 web 看板（可选 SSH 隧道供外网访问）")
-  .option("--port <port>", "HTTP server 端口", "3700")
+  .description("启动 web 看板（默认 dev 模式，前端热更新）")
+  .option("--port <port>", "API server 端口", "3700")
+  .option("--prod", "生产模式（使用预构建的静态文件）")
   .option("--tunnel", "启用 SSH 反向隧道")
   .option("--tunnel-host <host>", "隧道服务器（如 user@server.com）")
   .option("--tunnel-auth <password>", "启用 HTTP Basic Auth（或设置 RW_WEB_PASSWORD 环境变量）")
   .action((opts) =>
     webCommand({
       port: parseInt(opts.port, 10),
+      prod: !!opts.prod,
       tunnel: !!opts.tunnel,
       tunnelHost: opts.tunnelHost,
       tunnelAuth: opts.tunnelAuth,

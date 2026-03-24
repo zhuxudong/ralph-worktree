@@ -293,13 +293,14 @@ export async function handleRequest(
 
 // AI task parsing using claude CLI
 async function parseTaskWithAI(input: string): Promise<{ name: string; description: string }> {
-  const { execaCommand } = await import("execa");
+  const { execa } = await import("execa");
   const prompt = `You are a task name generator. Given a natural language description of a task, extract a short kebab-case task name and a concise description. Respond ONLY in JSON format: {"name": "task-name", "description": "description text"}. No other text.
 
 User input: ${input}`;
 
-  const result = await execaCommand(`claude -p "${prompt.replace(/"/g, '\\"')}"`, {
+  const result = await execa("claude", ["--print", prompt, "--output-format", "text", "--max-turns", "1"], {
     timeout: 30_000,
+    stdin: "ignore",
   });
 
   const output = result.stdout.trim();

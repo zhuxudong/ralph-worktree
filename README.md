@@ -286,6 +286,24 @@ rw run
 - **最大循环限制**：默认 20 次循环上限
 - **单次超时**：默认 15 分钟
 
+## Skills（Agent 能力增强）
+
+项目内置了来自 [skills.sh](https://skills.sh) 的专业 skill，安装在 `.claude/skills/` 目录下。Claude Code 启动时会自动加载这些 skill，增强 agent 在前端开发方面的能力。
+
+已安装的 skill：
+
+| Skill | 来源 | 用途 |
+|-------|------|------|
+| vercel-react-best-practices | Vercel 官方 | React 性能优化、重渲染控制、Bundle 拆分等 |
+| frontend-ui-ux-engineer | 404kidwiz | UI/UX 设计、布局、配色、响应式、无障碍 |
+| frontend-design | mager | 前端设计模式和实现指导 |
+
+安装新 skill：
+
+```bash
+npx skills add <repo>@<skill-name> -y
+```
+
 ## 开发
 
 ```bash

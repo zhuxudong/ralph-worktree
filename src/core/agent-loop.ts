@@ -6,7 +6,6 @@ import { logger } from "../utils/logger.js";
 
 export interface AgentLoopOptions {
   cwd: string;
-  prompt: string;
   taskName: string;
   maxLoops: number;
   timeoutMs: number;
@@ -74,7 +73,7 @@ export async function runAgentLoop(
 async function callClaude(opts: AgentLoopOptions): Promise<string> {
   const args = [
     "--print",
-    opts.prompt,
+    "Read CLAUDE.md and execute the Current Task described in it. Follow all instructions in that file.",
     "--output-format",
     "stream-json",
     "--verbose",

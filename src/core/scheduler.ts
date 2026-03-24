@@ -96,10 +96,12 @@ export async function runScheduler(
       updateTaskState(opts.root, task.name, { worktreePath: wtPath });
       logger.task(task.name, `worktree 就绪: ${wtPath}`);
 
-      const prompt = buildPrompt(opts.root, task);
+      // Write CLAUDE.md into worktree so any claude session has full context
+      const claudeMd = buildPrompt(opts.root, task);
+      fs.writeFileSync(path.join(wtPath, "CLAUDE.md"), claudeMd);
+
       const result = await runAgentLoop({
         cwd: wtPath,
-        prompt,
         taskName: task.name,
         maxLoops: opts.maxLoops,
         timeoutMs: opts.timeoutMs,

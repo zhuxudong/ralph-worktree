@@ -17,12 +17,14 @@ export type WatcherEvent =
 type EventListener = (event: WatcherEvent) => void;
 
 export class Watcher {
-  private root: string;
+  readonly root: string;
   private interval: ReturnType<typeof setInterval> | null = null;
   private listeners = new Set<EventListener>();
   private lastTasksJson = "";
   private lastStateJson = "";
   private logOffsets = new Map<string, number>();
+  /** Ref count per task — only remove offset when count reaches 0. */
+  private logWatchRefs = new Map<string, number>();
 
   constructor(root: string) {
     this.root = root;
@@ -48,6 +50,7 @@ export class Watcher {
     }
     this.listeners.clear();
     this.logOffsets.clear();
+    this.logWatchRefs.clear();
   }
 
   /** Get current snapshot (useful for initial SSE payload). */
@@ -60,17 +63,33 @@ export class Watcher {
     return { tasks, state };
   }
 
-  /** Subscribe to log increments for a specific task. Returns unsubscribe fn. */
+  /** Read existing log lines for a task (for initial SSE payload). */
+  getLogLines(taskName: string): string[] {
+    const logFile = path.join(logsDir(this.root), `${taskName}.log`);
+    if (!fs.existsSync(logFile)) return [];
+    const content = fs.readFileSync(logFile, "utf-8");
+    return content.split("\n").filter((l) => l.length > 0);
+  }
+
+  /** Start watching a task's log file. Uses ref counting for safe cleanup. */
   watchLog(taskName: string): void {
     const logFile = path.join(logsDir(this.root), `${taskName}.log`);
     if (!this.logOffsets.has(taskName)) {
       const size = fs.existsSync(logFile) ? fs.statSync(logFile).size : 0;
       this.logOffsets.set(taskName, size);
     }
+    this.logWatchRefs.set(taskName, (this.logWatchRefs.get(taskName) ?? 0) + 1);
   }
 
+  /** Decrement ref count; only remove offset when no watchers remain. */
   unwatchLog(taskName: string): void {
-    this.logOffsets.delete(taskName);
+    const refs = (this.logWatchRefs.get(taskName) ?? 1) - 1;
+    if (refs <= 0) {
+      this.logWatchRefs.delete(taskName);
+      this.logOffsets.delete(taskName);
+    } else {
+      this.logWatchRefs.set(taskName, refs);
+    }
   }
 
   // ---- internal ----
@@ -84,6 +103,17 @@ export class Watcher {
     const sp = statePath(this.root);
     if (fs.existsSync(sp)) {
       this.lastStateJson = fs.readFileSync(sp, "utf-8");
+      // Auto-watch logs for already-running tasks (e.g. server restart mid-run)
+      try {
+        const state: RunState = JSON.parse(this.lastStateJson);
+        for (const t of state.tasks) {
+          if (t.status === "running") {
+            this.watchLog(t.name);
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
     }
   }
 

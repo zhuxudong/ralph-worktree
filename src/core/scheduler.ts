@@ -7,6 +7,7 @@ import { readPrompt, readRules, readSpecs, readTaskSpec, readMemory, memoryDir, 
 import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../utils/logger.js";
+import { getEmployee } from "./employee.js";
 import SYSTEM_INSTRUCTIONS from "../prompts/system.md";
 
 export interface SchedulerOptions {
@@ -47,6 +48,19 @@ function buildPrompt(root: string, task: Task): string {
     text += `## Completed Tasks (for context)\n${memory}\n\n`;
   }
 
+  // Inject employee persona if task has an assignee
+  if (task.assignee) {
+    const employee = getEmployee(root, task.assignee);
+    if (employee) {
+      text += `## Employee Persona (数字员工角色)\n`;
+      text += `你是 **${employee.name}**（${employee.role}）：${employee.description}\n`;
+      if (employee.systemPrompt) {
+        text += `\n${employee.systemPrompt}\n`;
+      }
+      text += `\n`;
+    }
+  }
+
   text += `## Current Task\n**${task.name}**: ${task.description}\n`;
 
   if (taskSpec) {
@@ -72,6 +86,7 @@ export async function runScheduler(
         branch: `rw/${task.name}`,
         maxLoops: opts.maxLoops,
         startedAt: new Date().toISOString(),
+        assignee: task.assignee,
       });
 
       logger.task(task.name, "正在创建 worktree...");

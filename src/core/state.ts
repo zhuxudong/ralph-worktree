@@ -14,6 +14,7 @@ export interface TaskState {
   mergedAt?: string;
   deletedAt?: string;
   summary?: string;
+  assignee?: string;
 }
 
 export interface RunState {

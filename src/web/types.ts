@@ -1,7 +1,16 @@
+export interface Employee {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  systemPrompt?: string;
+}
+
 export interface Task {
   name: string;
   description: string;
   status: "pending" | "running" | "done" | "failed" | "merged" | "deleted";
+  assignee?: string;
 }
 
 export interface TaskState {
@@ -14,6 +23,7 @@ export interface TaskState {
   startedAt?: string;
   finishedAt?: string;
   summary?: string;
+  assignee?: string;
 }
 
 export interface RunState {

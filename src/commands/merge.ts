@@ -2,6 +2,8 @@ import fs from "node:fs";
 import { execa } from "execa";
 import { todoPath, ensureRwDir, readMemory, readRules } from "../core/config.js";
 import { parseTodo, updateTaskStatus } from "../core/todo-parser.js";
+import { updateTaskState } from "../core/state.js";
+import { cleanup } from "../core/worktree.js";
 import MERGE_CONFLICT_PROMPT from "../prompts/merge-conflict.md";
 import {
   gitRootDir,
@@ -91,7 +93,11 @@ export async function mergeCommand(opts: MergeOptions = {}) {
     const result = await gitMerge(branch, into, root);
     if (result.success) {
       updateTaskStatus(td, task.name, "merged");
+      updateTaskState(root, task.name, { status: "merged", mergedAt: new Date().toISOString() });
+      // Clean worktree + branch (code is now on target branch)
+      const cleaned = await cleanup(root, task.name);
       logger.success(`已合并 ${branch} 到 ${into}`);
+      if (cleaned.worktree) logger.info(`  已清理 worktree + 分支`);
       continue;
     }
 
@@ -100,7 +106,10 @@ export async function mergeCommand(opts: MergeOptions = {}) {
       const resolved = await resolveConflictsWithAgent(root, branch, into);
       if (resolved) {
         updateTaskStatus(td, task.name, "merged");
+        updateTaskState(root, task.name, { status: "merged", mergedAt: new Date().toISOString() });
+        const cleaned = await cleanup(root, task.name);
         logger.success(`已合并 ${branch} 到 ${into}（冲突已由 agent 解决）`);
+        if (cleaned.worktree) logger.info(`  已清理 worktree + 分支`);
       } else {
         await gitMergeAbort(root);
         logger.error(`合并 ${branch} 失败：agent 无法解决冲突，已 abort`);

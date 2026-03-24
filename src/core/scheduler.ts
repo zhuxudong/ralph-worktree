@@ -109,7 +109,7 @@ export async function runScheduler(
       const finalStatus = result.status === "done" ? "done" : "failed";
       updateTaskStatus(td, task.name, finalStatus);
       updateTaskState(opts.root, task.name, {
-        status: result.status,
+        status: finalStatus,
         loops: result.loops,
         finishedAt: new Date().toISOString(),
         summary: result.summary,

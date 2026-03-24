@@ -111,19 +111,23 @@ async function callClaude(opts: AgentLoopOptions): Promise<string> {
             for (const block of event.message.content) {
               if (block.type === "text") {
                 fullText += block.text;
+                // Log agent's reasoning text (trim to meaningful lines)
+                const text = block.text.trim();
+                if (text) {
+                  for (const textLine of text.split("\n")) {
+                    const trimmed = textLine.trim();
+                    if (trimmed) {
+                      logger.task(opts.taskName, `  ${truncate(trimmed, 120)}`);
+                    }
+                  }
+                }
+              } else if (block.type === "tool_use") {
+                const detail = formatToolDetail(block.name, block.input);
+                logger.task(opts.taskName, `  → ${block.name}${detail}`);
               }
             }
           } else if (event.type === "result" && event.result) {
-            // Final result text
             fullText = event.result;
-          }
-          // Log tool usage for visibility
-          if (event.type === "assistant" && event.message?.content) {
-            for (const block of event.message.content) {
-              if (block.type === "tool_use") {
-                logger.task(opts.taskName, `  → ${block.name}`);
-              }
-            }
           }
         } catch {
           // non-JSON line, ignore
@@ -134,4 +138,34 @@ async function callClaude(opts: AgentLoopOptions): Promise<string> {
 
   await proc;
   return fullText;
+}
+
+function formatToolDetail(name: string, input: Record<string, unknown> | undefined): string {
+  if (!input) return "";
+  switch (name) {
+    case "Read":
+    case "Write":
+      return input.file_path ? `: ${shortenPath(input.file_path as string)}` : "";
+    case "Edit":
+      return input.file_path ? `: ${shortenPath(input.file_path as string)}` : "";
+    case "Glob":
+      return input.pattern ? `: ${input.pattern}` : "";
+    case "Grep":
+      return input.pattern ? `: "${input.pattern}"` : "";
+    case "Bash":
+      return input.command ? `: ${truncate(input.command as string, 60)}` : "";
+    case "Agent":
+      return input.description ? `: ${input.description}` : "";
+    default:
+      return "";
+  }
+}
+
+function shortenPath(filePath: string): string {
+  const parts = filePath.split("/");
+  return parts.length > 3 ? `.../${parts.slice(-3).join("/")}` : filePath;
+}
+
+function truncate(str: string, max: number): string {
+  return str.length > max ? str.slice(0, max) + "..." : str;
 }

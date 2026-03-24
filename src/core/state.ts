@@ -1,14 +1,17 @@
 import fs from "node:fs";
 import { statePath } from "./config.js";
+import type { Task } from "./todo-parser.js";
 
 export interface TaskState {
   name: string;
-  status: "pending" | "running" | "done" | "failed" | "breaker";
+  status: Task["status"];
   branch: string;
   worktreePath: string;
   loops: number;
   startedAt?: string;
   finishedAt?: string;
+  mergedAt?: string;
+  deletedAt?: string;
   summary?: string;
 }
 

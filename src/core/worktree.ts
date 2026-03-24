@@ -30,3 +30,37 @@ export async function provision(
   await gitWorktreeAdd(wtPath, branch, base, root);
   return path.resolve(root, wtPath);
 }
+
+export interface CleanupResult {
+  name: string;
+  worktree: boolean;
+  log: boolean;
+}
+
+/**
+ * Clean up worktree + branch + log for a task.
+ * Memory is preserved (it's the task's historical record).
+ */
+export async function cleanup(root: string, taskName: string): Promise<CleanupResult> {
+  const result: CleanupResult = { name: taskName, worktree: false, log: false };
+
+  const wtPath = path.join(worktreesDir(root), taskName);
+  if (fs.existsSync(wtPath)) {
+    try {
+      await gitWorktreeRemove(wtPath, root);
+    } catch {
+      fs.rmSync(wtPath, { recursive: true, force: true });
+    }
+    result.worktree = true;
+  }
+  await gitBranchDelete(`rw/${taskName}`, root);
+
+  const { logsDir } = await import("./config.js");
+  const logFile = path.join(logsDir(root), `${taskName}.log`);
+  if (fs.existsSync(logFile)) {
+    fs.unlinkSync(logFile);
+    result.log = true;
+  }
+
+  return result;
+}

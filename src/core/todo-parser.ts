@@ -3,7 +3,7 @@ import fs from "node:fs";
 export interface Task {
   name: string;
   description: string;
-  status: "pending" | "running" | "done" | "failed";
+  status: "pending" | "running" | "done" | "failed" | "merged";
 }
 
 const STATUS_MAP: Record<string, Task["status"]> = {
@@ -11,6 +11,7 @@ const STATUS_MAP: Record<string, Task["status"]> = {
   "~": "running",
   x: "done",
   "!": "failed",
+  "✓": "merged",
 };
 
 const REVERSE_STATUS: Record<Task["status"], string> = {
@@ -18,9 +19,10 @@ const REVERSE_STATUS: Record<Task["status"], string> = {
   running: "~",
   done: "x",
   failed: "!",
+  merged: "✓",
 };
 
-const TASK_RE = /^- \[([x ~!])\] (\S+?):\s*(.+)$/;
+const TASK_RE = /^- \[([x ~!✓])\] (\S+?):\s*(.+)$/;
 
 export function parseTodo(content: string): Task[] {
   const tasks: Task[] = [];

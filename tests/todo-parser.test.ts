@@ -9,10 +9,11 @@ describe("parseTodo", () => {
 - [~] refactor-utils: Extract shared utils
 - [x] fix-shadow: Fix shadow mapping
 - [!] broken-task: This task failed
+- [✓] merged-task: This task was merged
 `;
 
     const tasks = parseTodo(content);
-    expect(tasks).toHaveLength(4);
+    expect(tasks).toHaveLength(5);
 
     expect(tasks[0]).toEqual({
       name: "fix-camera",
@@ -33,6 +34,11 @@ describe("parseTodo", () => {
       name: "broken-task",
       description: "This task failed",
       status: "failed",
+    });
+    expect(tasks[4]).toEqual({
+      name: "merged-task",
+      description: "This task was merged",
+      status: "merged",
     });
   });
 

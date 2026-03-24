@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { execa } from "execa";
 import { todoPath, ensureRwDir, readMemory, readRules } from "../core/config.js";
-import { parseTodo } from "../core/todo-parser.js";
+import { parseTodo, updateTaskStatus } from "../core/todo-parser.js";
 import MERGE_CONFLICT_PROMPT from "../prompts/merge-conflict.md";
 import {
   gitRootDir,
@@ -90,6 +90,7 @@ export async function mergeCommand(opts: MergeOptions = {}) {
 
     const result = await gitMerge(branch, into, root);
     if (result.success) {
+      updateTaskStatus(td, task.name, "merged");
       logger.success(`已合并 ${branch} 到 ${into}`);
       continue;
     }
@@ -98,6 +99,7 @@ export async function mergeCommand(opts: MergeOptions = {}) {
       logger.warn(`合并 ${branch} 有冲突，正在调用 agent 解决...`);
       const resolved = await resolveConflictsWithAgent(root, branch, into);
       if (resolved) {
+        updateTaskStatus(td, task.name, "merged");
         logger.success(`已合并 ${branch} 到 ${into}（冲突已由 agent 解决）`);
       } else {
         await gitMergeAbort(root);

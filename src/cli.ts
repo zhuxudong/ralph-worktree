@@ -7,6 +7,11 @@ import { removeCommand } from "./commands/remove.js";
 
 import { mergeCommand } from "./commands/merge.js";
 import { webCommand } from "./commands/web.js";
+import {
+  employeeListCommand,
+  employeeAddCommand,
+  employeeRemoveCommand,
+} from "./commands/employee.js";
 
 const program = new Command();
 
@@ -45,7 +50,9 @@ program
 program
   .command("add <input>")
   .description('添加任务到 TODO.md（格式："task-name: 描述"）')
-  .action(addCommand);
+  .option("--assignee <id>", "手动指派数字员工")
+  .option("--no-auto-assign", "禁用自动指派")
+  .action((input, opts) => addCommand(input, opts));
 
 program
   .command("remove <name>")
@@ -74,5 +81,30 @@ program
       tunnelAuth: opts.tunnelAuth,
     })
   );
+
+const employee = program
+  .command("employee")
+  .description("管理数字员工");
+
+employee
+  .command("list")
+  .alias("ls")
+  .description("查看所有数字员工")
+  .action(employeeListCommand);
+
+employee
+  .command("add <id>")
+  .description("添加数字员工")
+  .requiredOption("--name <name>", "员工名称")
+  .requiredOption("--role <role>", "职能角色（如 frontend、backend、test）")
+  .requiredOption("--desc <description>", "员工描述")
+  .option("--prompt <systemPrompt>", "自定义系统提示词")
+  .action((id, opts) => employeeAddCommand(id, opts));
+
+employee
+  .command("remove <id>")
+  .alias("rm")
+  .description("删除数字员工")
+  .action(employeeRemoveCommand);
 
 program.parse();

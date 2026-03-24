@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Task, RunState, SmartTaskResult } from "../types";
+import type { Task, RunState, SmartTaskResult, Employee } from "../types";
 
 const API_BASE = "/api";
 
@@ -56,10 +56,10 @@ export function useRunState() {
   return { state, setState, refresh };
 }
 
-export async function addTask(name: string, description: string): Promise<void> {
+export async function addTask(name: string, description: string, assignee?: string): Promise<void> {
   await request("/tasks", {
     method: "POST",
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify({ name, description, assignee }),
   });
 }
 
@@ -105,4 +105,48 @@ export async function getMemory(name: string): Promise<Record<string, string>> {
 export async function getLogs(name: string): Promise<string> {
   const data = await request<{ logs: string }>(`/logs/${encodeURIComponent(name)}`);
   return data.logs;
+}
+
+// Employee API
+export function useEmployees() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await request<Employee[]>("/employees");
+      setEmployees(data);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { employees, loading, refresh };
+}
+
+export async function createEmployee(employee: Employee): Promise<void> {
+  await request("/employees", {
+    method: "POST",
+    body: JSON.stringify(employee),
+  });
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  await request(`/employees/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function autoAssignEmployee(description: string): Promise<Employee | null> {
+  const data = await request<{ employee: Employee | null }>("/employees/auto-assign", {
+    method: "POST",
+    body: JSON.stringify({ description }),
+  });
+  return data.employee;
 }

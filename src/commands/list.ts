@@ -32,20 +32,31 @@ export async function listCommand() {
     return;
   }
 
-  const table = new Table({
-    head: [
-      chalk.bold("任务"),
-      chalk.bold("状态"),
-      chalk.bold("描述"),
-    ],
-    colWidths: [25, 18, 50],
-    wordWrap: true,
-  });
-
   const visibleTasks = tasks.filter((t) => t.status !== "deleted");
+  const hasAssignee = visibleTasks.some((t) => t.assignee);
+
+  const head = [
+    chalk.bold("任务"),
+    chalk.bold("状态"),
+    chalk.bold("描述"),
+  ];
+  const colWidths = [25, 18, 50];
+
+  if (hasAssignee) {
+    head.splice(2, 0, chalk.bold("指派"));
+    colWidths.splice(2, 0, 14);
+    colWidths[3] = 40;
+  }
+
+  const table = new Table({ head, colWidths, wordWrap: true });
 
   for (const task of visibleTasks) {
-    table.push([task.name, STATUS_DISPLAY[task.status], task.description]);
+    const row = [task.name, STATUS_DISPLAY[task.status]];
+    if (hasAssignee) {
+      row.push(task.assignee ? chalk.cyan(`@${task.assignee}`) : chalk.dim("—"));
+    }
+    row.push(task.description);
+    table.push(row);
   }
 
   console.log(table.toString());
